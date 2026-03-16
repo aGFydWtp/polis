@@ -587,10 +587,7 @@ already capture the relative group difference.
 
 ### What's Next
 
-1. **PR 14 refactor**: Extract stats computation from `compute_group_comment_stats_df` for
-   testability, then add vectorized blob injection tests.
-2. Review remaining VM fixes: D15, D10, D11, D3, D12, D1, PR15.
-3. K-divergence investigation (separate session off D15 branch).
+1. **PR 9 — Fix D11 (Consensus selection)**: Match Clojure's consensus comment selection.
 
 ---
 
@@ -679,18 +676,12 @@ on vw (Python k=4, Clojure k=2). Systematic elimination:
    `natsorted()`, Clojure preserves vote-encounter order (NamedMatrix insertion order).
    Different row ordering → different first-k-distinct seeds → different local optima.
 
-Verified Clojure ordering chain by reading `conversation.clj`, `named_matrix.clj`,
-`clusters.clj`: `filter-by-index` preserves original matrix row order, not
-set iteration order. The CSV first-appearance order `[2, 3, 4, 6, 8, ...]` matches
-the Clojure blob's base-cluster PID order exactly.
-
 ### Fix
 
 - `conversation.py update_votes()`: replaced `natsorted(existing_rows.union(new_rows))`
   with first-appearance order tracking from `vote_updates`
 - `conversation.py _apply_moderation()`: replaced `natsorted()` with order-preserving
   list comprehension
-- Column ordering remains natsorted (doesn't affect clustering)
 
 ### Cold-start blob results
 
@@ -701,32 +692,78 @@ the Clojure blob's base-cluster PID order exactly.
 | bg2018 | 2 | 2 | **2** | close ([52,48] vs [51,49]) |
 | FLI | 2 | 3 | 3 | inherent PCA divergence |
 
-FLI: 94.5% NaN sparsity, PCA |cos|≈0.9997 (not 1.0), silhouette gap 0.001. Not
-fixable without replicating Clojure's power iteration PCA. Low priority.
-
-### Test results
-
-- 297 passed, 0 failed, 6 skipped, 58 xfailed
-- Removed `test_group_clustering` xfail (now passes on cold-start blobs)
-- Added incremental-blob xfail (different in-conv from single-shot)
-- Updated 6 ordering tests (expect encounter order, not natsort)
-- Re-recorded vw cold-start blob and golden snapshots for vw + biodiversity
-
 ### Session 12 (2026-03-17/18)
 
 - Created branch off D15, investigated k divergence across all 7 datasets
-- Re-recorded vw cold-start blob (confirmed k=2 is genuine, not generation artifact)
 - Found root cause: `natsorted()` on participant rows
 - Fixed `update_votes()` and `_apply_moderation()` to preserve encounter order
-- Rebased branch onto new D15 (other session had rebased the stack)
-- Inserted into stack at position 19/25, rebased D10→PR15 with `--onto`
+- 297 passed, 0 failed, 6 skipped, 58 xfailed
 - Created PR #2453
+
+---
+
+## PR 8: Fix D10 — Representative Comment Selection
+
+### TDD steps
+1. **Baseline**: 50 passed, 3 skipped, 40 xfailed (discrepancy tests), 8 passed, 12 xfailed (legacy)
+2. **Implementation**: Rewrote `select_rep_comments_df()` to match Clojure's `select-rep-comments`
+   (repness.clj:209-278): single pool of "sufficient" comments (OR-based passes-by-test),
+   best-agree pinned at front, sort by repness-metric, take 5, agrees-before-disagrees.
+3. **New helper functions**: `_passes_by_test_clojure()`, `_beats_best_by_test()`, `_beats_best_agr()`
+4. **Synthetic tests** (5 new): OR logic, agrees-before-disagrees ordering, max-5 limit,
+   fallback-best-by-test, best-agree-pinned-at-front
+5. **Full suite (public)**: 4 regression failures, all in `group_repness` (expected — selection change)
+6. **Re-recorded golden snapshots** for vw and biodiversity
+7. **Final (public)**: 294 passed, 3 skipped, 60 xfailed, 0 failures
+
+### Key discovery: blob comparison requires matching clusters
+The D10 blob comparison test (`test_rep_comments_match_clojure`) compares per-group selected tids.
+However, Python and Clojure produce different clusters:
+- **vw**: Python k=4, Clojure k=2
+- **biodiversity**: Both k=2, but group IDs swapped and memberships differ (78+22 vs 19+81)
+
+Different clusters → different participant sets per group → different stats → different selected
+comments. The blob comparison is meaningless until D3 (k-smoother buffer) is fixed.
+
+**Updated xfail reasons**: Changed all blob comparison tests from "D10: selection differs" to
+"D3: clusters differ → no shared comments to compare". This is the actual root cause.
+
+Tests affected (now xfailed for D3 instead of D10):
+- `TestD9::test_significance_sets_match_clojure` (was "D5/D6")
+- `TestD9::test_z_values_match_clojure` (was "D5/D6/D10")
+- `TestD5::test_pat_values_match_clojure_blob` (was "D5/D10")
+- `TestD6::test_rat_values_match_clojure_blob` (was "D6/D10")
+- `TestD7::test_repness_metric_matches_clojure_blob` (was "D7/D10")
+- `TestD8::test_repful_matches_clojure_blob` (was "D10")
+- `TestD10::test_rep_comments_match_clojure` (was "D10")
+
+### Changes
+- `repness.py`: New `_passes_by_test_clojure()` — OR-based significance: either (pat>Z_90 AND rat>Z_90)
+  OR (pdt>Z_90 AND rdt>Z_90), matching Clojure's `passes-by-test?` (repness.clj:162-167)
+- `repness.py`: New `_beats_best_by_test()` — fallback tracking: max(rat, rdt) > current best z,
+  matching Clojure (repness.clj:130-136)
+- `repness.py`: New `_beats_best_agr()` — best-agree tracking with 4-case conditional,
+  matching Clojure (repness.clj:139-159)
+- `repness.py`: Rewrote `select_rep_comments_df()` — Clojure's single-pass algorithm:
+  sufficient pool → sort by repness-metric → prepend best-agree → take 5 → agrees-before-disagrees
+- `test_discrepancy_fixes.py`: 5 new synthetic tests + updated xfail reasons on 7 blob tests
+
+### Session 11 (2026-03-16)
+
+- Created branch `jc/clj-parity-d10-rep-comment-selection` on top of `jc/clj-parity-d8-finalize-stats`
+- Read Clojure source (repness.clj:130-278) line by line for all helper functions
+- Identified 3 key differences: OR-based passes-by-test, single-pool selection (vs 3+2 split),
+  best-agree pinned at front
+- Implemented fix with 3 new helper functions + rewritten `select_rep_comments_df`
+- Discovered blob comparison is blocked by cluster mismatch (D3), not just selection logic
+- Updated all xfail reasons to reflect the actual root cause (D3 clusters)
+- Re-recorded golden snapshots for vw and biodiversity
+- Final: 294 passed, 0 failed, 3 skipped, 60 xfailed
 
 ### What's Next
 
-1. Refactor D10-D1 branches (tests, code cleanup) before creating PRs for them.
-2. Re-record private dataset golden snapshots.
-3. FLI k divergence: accept or investigate Clojure power iteration PCA (low priority).
+1. **PR 9 — Fix D11 (Consensus selection)**: Match Clojure's consensus logic.
+2. **D3 (k-smoother)**: Once fixed, all blob comparison tests should pass.
 
 ---
 

@@ -502,7 +502,7 @@ See `delphi/docs/INVESTIGATION_K_DIVERGENCE.md` for the full investigation.
 | D7 | Repness metric | PR 6 | — | **DONE** ✓ |
 | D8 | Finalize cmt stats | PR 7 | — | **DONE** ✓ |
 | D9 | Z-score thresholds | **PR 3** | **#2446** | **DONE** ✓ |
-| D10 | Rep comment selection | PR 8 | — | Fix (with legacy env var) |
+| D10 | Rep comment selection | PR 8 | — | **DONE** ✓ |
 | D11 | Consensus selection | PR 9 | — | Fix (with legacy env var) |
 | D12 | Comment priorities | PR 11 | — | Fix (implement from scratch) |
 | D13 | Subgroup clustering | — | — | **Deferred** (unused) |
