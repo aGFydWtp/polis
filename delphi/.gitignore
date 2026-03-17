@@ -244,6 +244,9 @@ data/
 *.h5
 *.hdf5
 
+# Debug scratch directory (temp outputs, not committed)
+scratch/
+
 # Output directories
 output/
 results/

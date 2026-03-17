@@ -12,3 +12,4 @@ delphi/umap_narrative/__init__.py
 preprod.env 
 prod.env
 xids.csv
+scratch/
