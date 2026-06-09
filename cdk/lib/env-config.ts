@@ -35,7 +35,8 @@ export const PolisEnvValuesSchema = z.object({
   rootVolumeSizeGiB: z.number().int().positive().optional(),
   dataVolumeSizeGiB: z.number().int().positive().optional(),
   appPort: z.number().int().positive().optional(),
-  envSecretName: z.string().optional(),
+  /** SSM Parameter Store の SecureString パラメータ名（.env 全体を格納） */
+  envParamName: z.string().optional(),
   gitBranch: z.string().optional(),
   // 停止/起動スケジュール
   stopCron: z.string().optional(),

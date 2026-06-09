@@ -103,7 +103,7 @@
       "rootVolumeSizeGiB": 30,
       "dataVolumeSizeGiB": 30,
       "appPort": 80,
-      "envSecretName": "polis-web-app-env-vars-dev",
+      "envParamName": "/polis/web-app-env-vars-dev",
       "gitBranch": "edge",
       "stopCron": "cron(0 18 ? * MON-FRI *)",
       "startCron": "cron(0 10 ? * MON-FRI *)",

@@ -4,7 +4,7 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as elbv2targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as scheduler from 'aws-cdk-lib/aws-scheduler';
 import { Construct } from 'constructs';
 import { Environment } from './common';
@@ -32,7 +32,7 @@ export class PolisMinimalStack extends cdk.Stack {
     const e = props.envValues;
 
     const appPort = e.appPort ?? 80;
-    const envSecretName = e.envSecretName ?? 'polis-web-app-env-vars';
+    const envParamName = e.envParamName ?? '/polis/web-app-env-vars';
     const gitBranch = e.gitBranch ?? 'edge';
     const instanceTypeString = e.instanceType ?? 't3.xlarge';
     const dataDevice = '/dev/sdf';
@@ -78,8 +78,10 @@ export class PolisMinimalStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    // --- env を格納したシークレット ---
-    const envSecret = secretsmanager.Secret.fromSecretNameV2(this, 'EnvSecret', envSecretName);
+    // --- env を格納した SSM SecureString パラメータ ---
+    const envParam = ssm.StringParameter.fromSecureStringParameterAttributes(this, 'EnvParam', {
+      parameterName: envParamName,
+    });
 
     // --- IAM ロール ---
     const role = new iam.Role(this, 'PolisInstanceRole', {
@@ -90,7 +92,16 @@ export class PolisMinimalStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly'),
       ],
     });
-    envSecret.grantRead(role);
+    envParam.grantRead(role);
+    // SecureString の復号権限。デフォルトの AWS マネージドキー (alias/aws/ssm) 利用を想定し、
+    // SSM 経由 (kms:ViaService) の Decrypt のみに限定して付与する。
+    role.addToPolicy(new iam.PolicyStatement({
+      actions: ['kms:Decrypt'],
+      resources: ['*'],
+      conditions: {
+        StringEquals: { 'kms:ViaService': `ssm.${this.region}.amazonaws.com` },
+      },
+    }));
     logGroup.grantWrite(role);
     role.addToPolicy(new iam.PolicyStatement({
       actions: ['ec2:AttachVolume', 'ec2:DescribeVolumes'],
@@ -121,8 +132,8 @@ export class PolisMinimalStack extends cdk.Stack {
       'mkdir -p /opt/polis && cd /opt/polis',
       `[ -d polis ] || git clone --depth 1 -b ${gitBranch} https://github.com/compdemocracy/polis.git polis`,
       'cd /opt/polis/polis',
-      `aws secretsmanager get-secret-value --secret-id ${envSecretName} --query SecretString --output text --region ${this.region} > .env`,
-      'if ! grep -q "^DATABASE_URL=" .env; then echo "ERROR: DATABASE_URL missing in env secret"; exit 1; fi',
+      `aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > .env`,
+      'if ! grep -q "^DATABASE_URL=" .env; then echo "ERROR: DATABASE_URL missing in env parameter"; exit 1; fi',
       'docker compose -f docker-compose.prod.yml up -d --build',
     );
 
