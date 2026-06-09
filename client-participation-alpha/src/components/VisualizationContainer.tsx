@@ -116,7 +116,7 @@ export default function VisualizationContainer({
         className="section-card loading-state"
         style={{ textAlign: 'center', padding: '2rem' }}
       >
-        <p>Loading visualization data...</p>
+        <p>読み込み中…</p>
       </section>
     )
   }
@@ -127,13 +127,23 @@ export default function VisualizationContainer({
         className="section-card"
         style={{ textAlign: 'center', padding: '2rem', color: '#666' }}
       >
-        <p>Visualization unavailable</p>
+        <p>オピニオンマップを表示できませんでした。</p>
       </section>
     )
   }
 
   if (!pcaData) {
-    return null
+    return (
+      <section
+        className="section-card"
+        style={{ textAlign: 'center', padding: '2rem', color: '#888' }}
+      >
+        <p>まだオピニオンマップを表示できません。</p>
+        <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+          投票が増えると自動的に表示されます。
+        </p>
+      </section>
+    )
   }
 
   return (

@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { uiLanguage } from '../lib/lang'
 import type { Translations } from '../strings/types'
+import AgreeIcon from './icons/AgreeIcon'
+import DisagreeIcon from './icons/DisagreeIcon'
 import InfoIcon from './icons/InfoIcon'
+import SkipIcon from './icons/SkipIcon'
 import type { StatementData } from './types'
 
 interface StatementProps {
@@ -86,11 +89,7 @@ export function Statement({
             {s.anonPerson} {s.x_wrote}
           </span>
         </div>
-        {remainingText && (
-          <span className="statement-remaining">
-            {remainingText}
-          </span>
-        )}
+        {remainingText && <span className="statement-remaining">{remainingText}</span>}
       </div>
 
       {/* Show official translation (replaces original) or original text */}
@@ -193,7 +192,8 @@ export function Statement({
           aria-label={s.agree}
           data-testid="vote-agree"
         >
-          {isVoting ? '' : `✔ ${s.agree}`}
+          <AgreeIcon size={32} fill="currentColor" />
+          <span className="vote-button-label">{s.agree}</span>
         </button>
         <button
           className="vote-button disagree"
@@ -202,7 +202,8 @@ export function Statement({
           aria-label={s.disagree}
           data-testid="vote-disagree"
         >
-          {isVoting ? '' : `✘ ${s.disagree}`}
+          <DisagreeIcon size={32} fill="currentColor" />
+          <span className="vote-button-label">{s.disagree}</span>
         </button>
         <button
           className="vote-button pass"
@@ -211,7 +212,8 @@ export function Statement({
           aria-label={passUnsureText}
           data-testid="vote-pass"
         >
-          {isVoting ? '' : passUnsureText}
+          <SkipIcon size={32} fill="currentColor" />
+          <span className="vote-button-label">{passUnsureText}</span>
         </button>
       </div>
       {voteError && <p className="vote-error">{voteError}</p>}

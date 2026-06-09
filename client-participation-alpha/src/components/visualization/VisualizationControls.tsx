@@ -30,9 +30,8 @@ export function VisualizationControls({
       style={{
         marginTop: '1.8rem',
         display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        flexWrap: 'wrap'
+        flexDirection: 'column',
+        gap: '0.75rem'
       }}
     >
       {/* Consensus button */}
@@ -66,7 +65,6 @@ export function VisualizationControls({
 
       {/* Group selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <span style={{ color: 'var(--color-text)', fontSize: '0.95rem' }}>{s.group_123}</span>
         {hulls.map(({ groupId }) => {
           const color = groupColors[groupId] ?? '#999'
           const letter = groupLetters[groupId] ?? ''
@@ -110,7 +108,7 @@ export function VisualizationControls({
                 }
               }}
             >
-              {letter}
+              {letter}の意見
             </button>
           )
         })}
@@ -123,7 +121,6 @@ export function VisualizationControls({
             display: 'flex',
             alignItems: 'center',
             gap: '0.75rem',
-            marginLeft: '0.5rem',
             flexWrap: 'wrap',
             maxWidth: '100%'
           }}

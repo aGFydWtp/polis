@@ -95,6 +95,8 @@ if (initialData) {
     description: initialData.conversation.description,
     requiresInviteCode: initialData.conversation.treevite_enabled,
     importanceEnabled: initialData.conversation.importance_enabled === true,
+    writeEnabled: initialData.conversation.write_type !== 0,
+    subscribeEnabled: initialData.conversation.subscribe_type !== 0,
   };
   
   if (initialData.nextComment) {
@@ -176,15 +178,16 @@ const hideHeader = Astro.url.searchParams.get('hide_header');
               />
             )}
             <p class="conversation-intro" set:html={s.participantHelpWelcomeText}></p>
-            <Survey 
-              client:load 
+            <Survey
+              client:load
               initialStatement={firstStatement}
               conversation_id={initialData.conversation.conversation_id}
               s={s}
               requiresInviteCode={surveyDetails?.requiresInviteCode}
               importanceEnabled={surveyDetails?.importanceEnabled}
+              subscribeEnabled={surveyDetails?.subscribeEnabled}
             />
-            <SurveyForm client:load s={s} conversation_id={conversation_id} requiresInviteCode={surveyDetails?.requiresInviteCode} />
+            {surveyDetails?.writeEnabled && <SurveyForm client:load s={s} conversation_id={conversation_id} requiresInviteCode={surveyDetails?.requiresInviteCode} />}
             {surveyDetails?.requiresInviteCode && (<TreeviteInvites client:only="react" conversation_id={conversation_id} s={s} />)}
           </>
         ) : (

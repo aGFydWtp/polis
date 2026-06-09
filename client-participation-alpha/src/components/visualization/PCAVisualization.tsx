@@ -26,7 +26,7 @@ export default function PCAVisualization({
   conversationId,
   s
 }: PCAVisualizationProps) {
-  const [isConsensusSelected, setisConsensusSelected] = useState(false)
+  const [isConsensusSelected, setisConsensusSelected] = useState(true)
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null)
   const [selectedStatement, setSelectedStatement] = useState<SelectedStatement | null>(null)
   const [userPid, setUserPid] = useState<number | null>(null)
@@ -108,7 +108,7 @@ export default function PCAVisualization({
   }
 
   return (
-    <section className="section-card">
+    <section>
       <h2>{s.opinionGroups}</h2>
       <svg
         width={width}

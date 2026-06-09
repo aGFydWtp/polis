@@ -48,6 +48,7 @@ s.writeCommentHelpText = "上記の質問に、あなたの意見やアイデア
 // Visualization
 // ─────────────────────────────────────────────────────────────
 s.comment_123 = "意見："
+s.consensus = "グループを超えた共通の意見"
 s.group_123 = "グループ："
 s.opinionGroups = "意見グループ"
 s.pctAgreedLong = "{{comment_id}} に投票した {{pct}}% の人が賛成しました。"

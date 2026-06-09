@@ -14,6 +14,7 @@ interface SurveyProps {
   conversation_id: string
   requiresInviteCode?: boolean
   importanceEnabled?: boolean
+  subscribeEnabled?: boolean
 }
 
 const submitVoteAndGetNextCommentAPI = async (
@@ -48,7 +49,8 @@ export default function Survey({
   s,
   conversation_id,
   requiresInviteCode = false,
-  importanceEnabled = false
+  importanceEnabled = false,
+  subscribeEnabled = false
 }: SurveyProps) {
   const [statement, setStatement] = useState<StatementData | undefined>(initialStatement)
   const [isFetchingNext, setIsFetchingNext] = useState<boolean>(false)
@@ -191,7 +193,15 @@ export default function Survey({
           importanceEnabled={importanceEnabled}
         />
       ) : (
-        <EmailSubscribeForm s={s as Translations} conversation_id={conversation_id} />
+        <div className="survey-complete-card">
+          <p className="survey-complete-title">すべての意見に回答しました 🎉</p>
+          <p className="survey-complete-body">
+            新しい意見が追加されると、また回答できるようになります。
+          </p>
+          {subscribeEnabled && (
+            <EmailSubscribeForm s={s as Translations} conversation_id={conversation_id} />
+          )}
+        </div>
       )}
     </>
   )
