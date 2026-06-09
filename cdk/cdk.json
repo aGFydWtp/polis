@@ -82,6 +82,32 @@
     "@aws-cdk/aws-route53-targets:userPoolDomainNameMethodWithoutCustomResource": true,
     "@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault": true,
     "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": true,
-    "@aws-cdk/core:enableAdditionalMetadataCollection": true
+    "@aws-cdk/core:enableAdditionalMetadataCollection": true,
+    "dev": {
+      "account": "000000000000",
+      "region": "us-east-1",
+      "vpcId": "vpc-xxxxxxxx",
+      "vpcCidrBlock": "10.0.0.0/16",
+      "availabilityZones": ["us-east-1a"],
+      "publicSubnetIds": ["subnet-xxxxxxxx"],
+      "publicSubnetRouteTableIds": ["rtb-xxxxxxxx"],
+      "privateSubnetIds": [],
+      "privateSubnetRouteTableIds": [],
+      "listenerArn": "arn:aws:elasticloadbalancing:us-east-1:000000000000:listener/app/my-alb/xxxxxxxxxxxx/yyyyyyyyyyyy",
+      "loadBalancerSecurityGroupId": "sg-xxxxxxxx",
+      "listenerHostHeader": "polis-dev.example.com",
+      "backendListenerPriority": 100,
+      "amiId": "ami-xxxxxxxx",
+      "ebsVolumeId": "vol-xxxxxxxx",
+      "instanceType": "t3.xlarge",
+      "rootVolumeSizeGiB": 30,
+      "dataVolumeSizeGiB": 30,
+      "appPort": 80,
+      "envSecretName": "polis-web-app-env-vars-dev",
+      "gitBranch": "edge",
+      "stopCron": "cron(0 18 ? * MON-FRI *)",
+      "startCron": "cron(0 10 ? * MON-FRI *)",
+      "scheduleTimeZone": "Asia/Tokyo"
+    }
   }
 }
