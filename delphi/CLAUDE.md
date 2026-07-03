@@ -18,6 +18,20 @@ this avoids the confusion of having anything called a "cid", the joke was "conve
 
 this was built in two parts, the pca/kmenas/repness and the umap/narrative, and these are combined in the run_delphi.sh script.
 
+## Local Python Environment
+
+Canonical venv: `delphi/.venv` (Python 3.12). Setup is documented for humans in
+[`README.md`](README.md#local-python-development) and
+[`docs/QUICK_START.md`](docs/QUICK_START.md#environment-setup) — see those for
+the `make venv` / `uv sync` workflows.
+
+Invariant to be aware of when navigating this repo: **both `delphi/.venv` and
+`polis/.venv` should point at the same environment** (one real, the other a
+symlink). The Pyright config (`[tool.pyright]` in `delphi/pyproject.toml`)
+resolves `venv = ".venv"` to `delphi/.venv`; editors opening at the repo root
+look for `polis/.venv`. If you see unresolved imports while working in this
+codebase, check that both paths exist and resolve to the same env.
+
 ## Database Interactions
 
 ### Querying Local PostgreSQL Database
@@ -63,6 +77,21 @@ Always use the commands above to determine the most substantial conversation whe
   - `POSTGRES_USER`: Database username
   - `POSTGRES_PASSWORD`: Database password
   - `POSTGRES_HOST`: Database host
+  - `POSTGRES_CONNECT_TIMEOUT`: Seconds before the initial TCP `connect()`
+    gives up. **Default 30s** (conservative for production: transient
+    slowness, scale-up, network blips). CI and `example.env` override to **5s**
+    so tests and local dev fail fast when Postgres isn't running — without
+    this, an unreachable DB causes the process to hang for the kernel default
+    (~60–120s+). Honored by:
+    - `polismath/database/postgres.py` — SQLAlchemy `PostgresClient`.
+    - `polismath/run_math_pipeline.py` — psycopg2 `connect()` (the production
+      math worker invoked from `run_delphi.py`).
+
+    Note that SQLAlchemy's `pool_pre_ping` does NOT replace this: pre-ping
+    only acts on already-pooled connections, not on the initial socket connect.
+    Other psycopg2 callsites (`tests/`, `scripts/regression_download.py`) still
+    hardcode their own timeouts (typically 5s) — flag as a future cleanup if
+    you change anything in their neighborhood.
 
 - **Docker Configuration**:
 
