@@ -136,7 +136,7 @@ services:
       dockerfile: Dockerfile
     command: npm run dev
     volumes:
-      - ${AUTH_CERTS_PATH:-~/.simulacrum/certs}:/root/.simulacrum/certs:ro
+      - /root/.simulacrum/certs:/root/.simulacrum/certs:ro
     environment:
       - AUTH_AUDIENCE=${AUTH_AUDIENCE}
       - AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
