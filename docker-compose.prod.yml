@@ -130,6 +130,23 @@ services:
     networks:
       - "polis-net"
 
+  oidc-simulator:
+    build:
+      context: ./oidc-simulator
+      dockerfile: Dockerfile
+    command: npm run dev
+    volumes:
+      - ${AUTH_CERTS_PATH:-~/.simulacrum/certs}:/root/.simulacrum/certs:ro
+    environment:
+      - AUTH_AUDIENCE=${AUTH_AUDIENCE}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
+      - AUTH_ISSUER=${AUTH_ISSUER}
+      - AUTH_NAMESPACE=${AUTH_NAMESPACE:-https://pol.is/}
+      - AUTH_SIMULATOR_PORT=${AUTH_SIMULATOR_PORT:-3000}
+    networks:
+      - "polis-net"
+    restart: unless-stopped
+
 networks:
   polis-net:
 

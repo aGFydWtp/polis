@@ -1,19 +1,12 @@
 import { simulation as createAuth0Simulator } from "@simulacrum/auth0-simulator";
 import * as fs from "fs";
-import * as path from "path";
 
 // Configuration from environment variables
 const AUTH_AUDIENCE = process.env.AUTH_AUDIENCE || "users";
 const AUTH_CLIENT_ID = process.env.AUTH_CLIENT_ID || "dev-client-id";
 const AUTH_SIMULATOR_PORT = parseInt(process.env.AUTH_SIMULATOR_PORT || "3000");
-// Allow configurable issuer to handle Docker vs localhost access
 const AUTH_ISSUER =
   process.env.AUTH_ISSUER || `https://localhost:${AUTH_SIMULATOR_PORT}/`;
-// Certificate configuration - use environment variable or default
-const CERT_DIR = process.env.CERT_DIR || "/root/.simulacrum/certs";
-
-const CERT_FILE = path.join(CERT_DIR, "localhost.pem");
-const KEY_FILE = path.join(CERT_DIR, "localhost-key.pem");
 
 /**
  * Create a pool of test users for the simulator
@@ -92,28 +85,6 @@ async function start() {
   try {
     console.log("Starting OIDC simulator...");
 
-    // Check for certificate files
-    console.log(`Checking for certificates in: ${CERT_DIR}`);
-    if (fs.existsSync(CERT_DIR)) {
-      console.log(`✅ Certificate directory found`);
-      const certFiles = fs.readdirSync(CERT_DIR);
-      console.log(`Certificate files available:`, certFiles);
-      
-      // Check for specific certificate files
-      if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) {
-        console.log(`✅ SSL certificates found:`, {
-          cert: CERT_FILE,
-          key: KEY_FILE
-        });
-      } else {
-        console.log(`⚠️  Expected certificate files not found:`);
-        console.log(`  Certificate: ${CERT_FILE} - ${fs.existsSync(CERT_FILE) ? 'Found' : 'Not found'}`);
-        console.log(`  Private Key: ${KEY_FILE} - ${fs.existsSync(KEY_FILE) ? 'Found' : 'Not found'}`);
-      }
-    } else {
-      console.log(`❌ Certificate directory not found: ${CERT_DIR}`);
-    }
-
     // Create the OIDC simulator with a pool of test users
     const userPool = createUserPool(50);
     console.log("OIDC simulator user pool created:");
@@ -142,7 +113,6 @@ async function start() {
       console.log("OIDC simulator will run without custom rules");
     }
 
-    // Configure simulator options with HTTPS
     const simulatorOptions: any = {
       options: {
         audience: AUTH_AUDIENCE,
@@ -157,31 +127,12 @@ async function start() {
       },
     };
 
-    // Add HTTPS configuration if certificates are available
-    if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) {
-      console.log("Configuring HTTPS with certificates...");
-      try {
-        const cert = fs.readFileSync(CERT_FILE, 'utf8');
-        const key = fs.readFileSync(KEY_FILE, 'utf8');
-        console.log(`Certificate length: ${cert.length} chars`);
-        console.log(`Private key length: ${key.length} chars`);
-        
-        // Try to configure HTTPS - this may or may not work depending on the simulator
-        simulatorOptions.https = { cert, key };
-      } catch (certError) {
-        console.error("Error reading certificate files:", certError);
-      }
-    } else {
-      console.log("⚠️  Certificates not found, the simulator will likely fail to start on HTTPS");
-      console.log("   This is expected if certificates are not properly mounted");
-    }
-
     const simulatorApp = createAuth0Simulator(simulatorOptions);
 
-    // Start the simulator
+    // Start the simulator on HTTP (TLS is terminated at nginx/ALB)
     await simulatorApp.listen(AUTH_SIMULATOR_PORT);
 
-    console.log(`OIDC Simulator started on HTTPS port ${AUTH_SIMULATOR_PORT}`);
+    console.log(`OIDC Simulator started on HTTP port ${AUTH_SIMULATOR_PORT}`);
     console.log(`Auth Issuer: ${AUTH_ISSUER}`);
     console.log(`JWKS URI: ${AUTH_ISSUER}.well-known/jwks.json`);
     console.log(`Auth Client ID: ${AUTH_CLIENT_ID}`);
