@@ -47,10 +47,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_SSL=${DATABASE_SSL}
       - AWS_LOG_GROUP_NAME=${AWS_LOG_GROUP_NAME}
+      - NODE_EXTRA_CA_CERTS=/root/.simulacrum/certs/CA/rootCA.pem
     networks:
       - "polis-net"
     volumes:
       - server-logs:/app/logs
+      - /root/.simulacrum/certs:/root/.simulacrum/certs:ro
     restart: unless-stopped
     depends_on:
       - "postgres"
