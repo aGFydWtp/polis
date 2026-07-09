@@ -27,16 +27,24 @@ const voteBtnBase: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: 9,
+  gap: 7,
   width: '100%',
-  padding: '13px',
+  padding: '14px',
   border: 'none',
-  borderRadius: 12,
+  borderRadius: 14,
   fontFamily: 'inherit',
-  fontSize: 15,
+  fontSize: 15.5,
   fontWeight: 700,
+  boxShadow: '0 1px 2px 0 rgba(0,0,0,.04)',
   cursor: 'pointer'
 }
+
+/** Soft tinted vote-button style: 10% fill, full-strength label, 55% border. */
+const voteBtnTint = (rgb: string): CSSProperties => ({
+  background: `rgba(${rgb}, .1)`,
+  color: `rgb(${rgb})`,
+  border: `1.5px solid rgba(${rgb}, .55)`
+})
 
 function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
   const disabled = vm.isFetchingNext
@@ -59,12 +67,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         </div>
       )}
       <button
-        style={{
-          ...voteBtnBase,
-          background: '#2f9e6f',
-          color: '#fff',
-          opacity: disabled ? 0.6 : 1
-        }}
+        style={{ ...voteBtnBase, ...voteBtnTint('47, 158, 111'), opacity: disabled ? 0.6 : 1 }}
         disabled={disabled}
         onClick={() => vm.vote(VOTE_AGREE)}
       >
@@ -84,12 +87,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         {s.agree}
       </button>
       <button
-        style={{
-          ...voteBtnBase,
-          background: '#e6483c',
-          color: '#fff',
-          opacity: disabled ? 0.6 : 1
-        }}
+        style={{ ...voteBtnBase, ...voteBtnTint('217, 70, 59'), opacity: disabled ? 0.6 : 1 }}
         disabled={disabled}
         onClick={() => vm.vote(VOTE_DISAGREE)}
       >
@@ -109,13 +107,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         {s.disagree}
       </button>
       <button
-        style={{
-          ...voteBtnBase,
-          background: 'rgba(136, 146, 166, 0.1)',
-          color: '#8892a6',
-          border: '1.5px solid rgba(136, 146, 166, 0.55)',
-          opacity: disabled ? 0.6 : 1
-        }}
+        style={{ ...voteBtnBase, ...voteBtnTint('136, 146, 166'), opacity: disabled ? 0.6 : 1 }}
         disabled={disabled}
         onClick={() => vm.vote(VOTE_HOLD)}
       >
