@@ -153,7 +153,13 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         {s.disagree}
       </button>
       <button
-        style={{ ...voteBtnBase, background: '#f5bd4f', color: INK, opacity: disabled ? 0.6 : 1 }}
+        style={{
+          ...voteBtnBase,
+          background: 'transparent',
+          color: INK,
+          border: `1.5px solid ${INK}`,
+          opacity: disabled ? 0.6 : 1
+        }}
         disabled={disabled}
         onClick={() => vm.vote(VOTE_HOLD)}
       >
@@ -288,19 +294,6 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                   boxShadow: '0 10px 22px -10px rgba(59,91,219,.7)'
                 }}
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m5 12 5 5L20 7" />
-                </svg>
                 {s.v2VoteCta}
               </button>
               <div style={{ textAlign: 'center', fontSize: 11, color: '#9aa2b1', marginTop: 9 }}>
