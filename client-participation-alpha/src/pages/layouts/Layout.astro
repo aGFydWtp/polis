@@ -14,6 +14,8 @@ const { title = 'Polis Conversation', lang = 'en', dir = 'ltr' } = Astro.props;
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Tints the mobile browser chrome (iOS status bar / Android address bar) to match the hero -->
+    <meta name="theme-color" content="#1f2a44" />
     <!-- Relative URL so it works when app is mounted at /alpha/ behind nginx -->
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <title>{title}</title>
