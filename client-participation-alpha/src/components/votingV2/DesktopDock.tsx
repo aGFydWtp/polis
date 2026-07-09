@@ -111,9 +111,9 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
       <button
         style={{
           ...voteBtnBase,
-          background: 'transparent',
-          color: INK,
-          border: `1.5px solid ${INK}`,
+          background: 'rgba(136, 146, 166, 0.1)',
+          color: '#8892a6',
+          border: '1.5px solid rgba(136, 146, 166, 0.55)',
           opacity: disabled ? 0.6 : 1
         }}
         disabled={disabled}
