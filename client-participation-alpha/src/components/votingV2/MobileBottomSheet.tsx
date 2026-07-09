@@ -194,7 +194,13 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
 
   return (
     <div
-      style={{ position: 'relative', background: '#eef1f6', minHeight: '100vh', paddingBottom: 80 }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        background: '#eef1f6',
+        minHeight: '100vh',
+        paddingBottom: 80
+      }}
     >
       {/* Hero */}
       <div style={{ background: INK, color: '#fff', padding: '16px 20px 22px' }}>

@@ -61,7 +61,7 @@ export default function VotingScreen({
 
   if (isMobile === null) {
     // Neutral placeholder to keep SSR and first client render identical.
-    return <div style={{ minHeight: '100vh', background: '#eef1f6' }} />
+    return <div style={{ width: '100%', minHeight: '100vh', background: '#eef1f6' }} />
   }
 
   return isMobile ? (
