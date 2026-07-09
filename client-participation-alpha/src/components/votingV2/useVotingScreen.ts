@@ -339,17 +339,20 @@ export function useVotingScreen({
     [statement, conversation_id, s]
   )
 
+  const notDone = !!statement
+  const allDone = hasLoadedFirst && !statement
+
   // ── Progress ──────────────────────────────────────────────────
-  const remaining = statement?.remaining
+  // Once every statement is answered there is no current statement, so force a
+  // completed state: the progress bar reads 100% and the counter reads 0.
+  const remaining = allDone ? 0 : statement?.remaining
   const progressPct = useMemo(() => {
+    if (allDone) return 100
     if (typeof total === 'number' && total > 0 && typeof remaining === 'number') {
       return Math.max(0, Math.min(100, Math.round(((total - remaining) / total) * 100)))
     }
     return null
-  }, [total, remaining])
-
-  const notDone = !!statement
-  const allDone = hasLoadedFirst && !statement
+  }, [allDone, total, remaining])
 
   return {
     // voting
