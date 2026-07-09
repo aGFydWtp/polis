@@ -114,7 +114,7 @@ if (initialData) {
 }
 
 const hideHeader = Astro.url.searchParams.get('hide_header');
-const uiV2 = Astro.url.searchParams.get('ui') === 'v2';
+const uiV2 = Astro.url.searchParams.get('ui') !== 'v1';
 ---
 <Layout
   title={surveyDetails?.title ?? 'Loading Conversation...'}
