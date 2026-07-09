@@ -109,7 +109,13 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         {s.disagree}
       </button>
       <button
-        style={{ ...voteBtnBase, background: '#f5bd4f', color: INK, opacity: disabled ? 0.6 : 1 }}
+        style={{
+          ...voteBtnBase,
+          background: 'transparent',
+          color: INK,
+          border: `1.5px solid ${INK}`,
+          opacity: disabled ? 0.6 : 1
+        }}
         disabled={disabled}
         onClick={() => vm.vote(VOTE_HOLD)}
       >
