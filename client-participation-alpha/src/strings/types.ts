@@ -84,4 +84,30 @@ export interface Translations {
   x_wrote: string
   xidOidcConflictWarning: string
   xidRequired: string
+
+  // ─────────────────────────────────────────────────────────────
+  // Voting screen v2 (?ui=v2) — mobile bottom-sheet (3c) / desktop dock (4a)
+  // ─────────────────────────────────────────────────────────────
+  v2HeroTagline: string
+  v2VotingProgress: string
+  v2RemainingCount: string
+  v2VoteCta: string
+  v2CtaHint: string
+  v2AllAnsweredTitle: string
+  v2AllAnsweredBody: string
+  v2OpinionGroupsDesc: string
+  v2VoteInDockHint: string
+  v2GroupLabel: string
+  v2MajorOpinion: string
+  v2SelectToReact: string
+  v2AnonOpinion: string
+  v2GroupsNotFormed: string
+  v2PeopleCount: string
+  v2StatReaction: string
+  v2StatReactionShort: string
+  v2VotingInProgress: string
+  v2AllAnsweredShort: string
+  v2Pull: string
+  v2Close: string
+  v2Hold: string
 }

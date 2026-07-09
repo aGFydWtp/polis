@@ -10,6 +10,7 @@ import TopicAgenda from '../components/topicAgenda/TopicAgenda'
 import TreeviteInvites from '../components/TreeviteInvites'
 import TreeviteLoginCodeModal from '../components/TreeviteLoginCodeModal'
 import VisualizationContainer from '../components/VisualizationContainer'
+import VotingScreen from '../components/votingV2/VotingScreen'
 import XidOidcConflictWarning from '../components/XidOidcConflictWarning'
 import PolisLogo from '../components/icons/PolisLogo'
 import Layout from '../pages/layouts/Layout.astro'
@@ -111,6 +112,7 @@ if (initialData) {
 }
 
 const hideHeader = Astro.url.searchParams.get('hide_header');
+const uiV2 = Astro.url.searchParams.get('ui') === 'v2';
 ---
 <Layout
   title={surveyDetails?.title ?? 'Loading Conversation...'}
@@ -146,6 +148,17 @@ const hideHeader = Astro.url.searchParams.get('hide_header');
     }
   </script>
   
+  {uiV2 && initialData && isConversationActive ? (
+    <VotingScreen
+      client:load
+      conversation_id={initialData.conversation.conversation_id}
+      s={s}
+      topic={surveyDetails?.title ?? ''}
+      description={surveyDetails?.description ?? ''}
+      initialStatement={firstStatement}
+      visType={initialData.conversation.vis_type}
+    />
+  ) : (
   <div class="container">
     {hideHeader ? null : <Header />}
     
@@ -208,4 +221,5 @@ const hideHeader = Astro.url.searchParams.get('hide_header');
       <DonateMessage client:load />
     </div>
   </div>
+  )}
 </Layout>

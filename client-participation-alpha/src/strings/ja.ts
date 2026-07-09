@@ -84,4 +84,31 @@ s.hideTranslationButton = "元の言語に戻す"
 // Authentication / XID
 // ─────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────
+// Voting screen v2 (?ui=v2) — 3c モバイル / 4a PC
+// ─────────────────────────────────────────────────────────────
+s.v2HeroTagline = "みんなの声から、次の一歩を見つける。"
+s.v2VotingProgress = "投票の進捗"
+s.v2RemainingCount = "残り {{n}} 問"
+s.v2VoteCta = "投票する"
+s.v2CtaHint = "タップすると下から意見が表示されます"
+s.v2AllAnsweredTitle = "すべての意見に回答しました"
+s.v2AllAnsweredBody = "新しい意見が追加されると、また回答できるようになります。"
+s.v2OpinionGroupsDesc =
+  "意見が似ている人は自動でグループにまとまります。グループを選ぶと、その人たちの視点を確認できます。"
+s.v2VoteInDockHint = "右の投票ドックで1件ずつ回答してください。"
+s.v2GroupLabel = "グループ"
+s.v2MajorOpinion = "メジャーな意見（全体）"
+s.v2SelectToReact = "意見を選んで反応を見る"
+s.v2AnonOpinion = "匿名の意見"
+s.v2GroupsNotFormed = "グループはまだ形成されていません"
+s.v2PeopleCount = "{{n}}人"
+s.v2StatReaction = "この意見に投票した {{pct}}% の人が「{{stance}}」しました。"
+s.v2StatReactionShort = "投票した {{pct}}% が「{{stance}}」"
+s.v2VotingInProgress = "投票中（残り {{n}} 問）"
+s.v2AllAnsweredShort = "すべて回答済み"
+s.v2Pull = "引き出す"
+s.v2Close = "閉じる"
+s.v2Hold = "保留"
+
 export default s

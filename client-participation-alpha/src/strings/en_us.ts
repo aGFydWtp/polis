@@ -138,7 +138,34 @@ const s: Translations = {
   xidOidcConflictWarning:
     "Warning: You are currently signed-in to polis, but have opened a conversation with an XID token. To participate with an XID, please log out of your polis account.",
   xidRequired:
-    "This conversation requires an XID (external identifier) to participate. Please use the proper link provided to you."
+    "This conversation requires an XID (external identifier) to participate. Please use the proper link provided to you.",
+
+  // ─────────────────────────────────────────────────────────────
+  // Voting screen v2 (?ui=v2)
+  // ─────────────────────────────────────────────────────────────
+  v2HeroTagline: "From everyone’s voices, find the next step.",
+  v2VotingProgress: "Voting progress",
+  v2RemainingCount: "{{n}} left",
+  v2VoteCta: "Vote",
+  v2CtaHint: "Tap to bring up statements from below",
+  v2AllAnsweredTitle: "You’ve answered every statement",
+  v2AllAnsweredBody: "When new statements are added, you’ll be able to answer again.",
+  v2OpinionGroupsDesc:
+    "People with similar opinions are grouped automatically. Select a group to see their perspective.",
+  v2VoteInDockHint: "Answer one at a time in the voting dock on the right.",
+  v2GroupLabel: "Group",
+  v2MajorOpinion: "Major opinions (overall)",
+  v2SelectToReact: "Select a statement to see reactions",
+  v2AnonOpinion: "Anonymous statement",
+  v2GroupsNotFormed: "Groups haven’t formed yet",
+  v2PeopleCount: "{{n}}",
+  v2StatReaction: "{{pct}}% of those who voted on this statement chose “{{stance}}”.",
+  v2StatReactionShort: "{{pct}}% voted “{{stance}}”",
+  v2VotingInProgress: "Voting ({{n}} left)",
+  v2AllAnsweredShort: "All answered",
+  v2Pull: "Pull up",
+  v2Close: "Close",
+  v2Hold: "Hold"
 }
 
 export default s
