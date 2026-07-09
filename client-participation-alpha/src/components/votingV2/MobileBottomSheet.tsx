@@ -200,6 +200,20 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         paddingBottom: 80
       }}
     >
+      {/* Paints the iOS status-bar safe area dark (theme-color alone doesn't tint
+          it when the address bar sits at the bottom). Zero height off-notch. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 'env(safe-area-inset-top)',
+          background: INK,
+          zIndex: 100
+        }}
+      />
       {/* Hero */}
       <div style={{ background: INK, color: '#fff', padding: '16px 20px 22px' }}>
         <div
