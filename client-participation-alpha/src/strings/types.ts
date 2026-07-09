@@ -109,5 +109,11 @@ export interface Translations {
   v2AllAnsweredShort: string
   v2Pull: string
   v2Close: string
+  /** Desktop 5a: opinion-group ⓘ tooltip body; paragraphs split on "\n\n". */
+  v2GroupsTooltip: string
+  /** Desktop 5a: prompt above the opinion in the vote panel. */
+  v2VotePrompt: string
+  /** Desktop 5a: collapses the vote panel back to progress + CTA. */
+  v2VoteClose: string
   v2Hold: string
 }

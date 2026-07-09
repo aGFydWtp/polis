@@ -165,6 +165,12 @@ const s: Translations = {
   v2AllAnsweredShort: "All answered",
   v2Pull: "Pull up",
   v2Close: "Close",
+  v2GroupsTooltip:
+    "People with similar opinions are grouped together. Click a group to step into that group’s perspective.\n\n" +
+    "Amazon’s “recommended products” and Netflix’s “recommended movies” use statistics to group users who buy or watch similar things, then show what other users in the same group are buying or watching.\n\n" +
+    "Pol.is works the same way. The groups below are made up of people with similar opinions. Click a group to see what characterizes it.",
+  v2VotePrompt: "Q. What do you think of this statement?",
+  v2VoteClose: "Close voting",
   v2Hold: "Hold"
 }
 

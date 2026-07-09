@@ -36,7 +36,7 @@ function useIsMobile(): boolean | null {
 
 /**
  * Entry point for the voting screen v2 (?ui=v2). Owns the shared voting state
- * hook and renders the mobile bottom-sheet (3c) or desktop dock (4a) layout.
+ * hook and renders the mobile bottom-sheet (3c) or desktop vote-panel (5a) layout.
  */
 export default function VotingScreen({
   conversation_id,
@@ -50,8 +50,8 @@ export default function VotingScreen({
   const isMobile = useIsMobile()
   const desktopOpenedRef = useRef(false)
 
-  // The desktop dock defaults to expanded (per the 4a design); the mobile sheet
-  // stays collapsed (peek) until the participant taps "投票する".
+  // The desktop vote panel defaults to expanded (per the 5a design); the mobile
+  // sheet stays collapsed (peek) until the participant taps "投票する".
   useEffect(() => {
     if (isMobile === false && !desktopOpenedRef.current) {
       desktopOpenedRef.current = true

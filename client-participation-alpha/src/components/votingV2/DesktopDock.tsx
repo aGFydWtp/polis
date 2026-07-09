@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent } from 'react'
+import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import GroupControls, { StatCard } from './GroupControls'
 import OpinionGroupMap from './OpinionGroupMap'
@@ -6,16 +6,22 @@ import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './us
 
 const INK = '#1f2a44'
 const INDIGO = '#3b5bdb'
+/** Desktop content band: title, groups and the floating vote card center within this. */
+const STAGE_MAX = 1024
+/** Right inset that pins the floating card to the centered band's right edge (0 once the
+    viewport is narrower than the band). */
+const CARD_RIGHT = `max(0px, calc((100% - ${STAGE_MAX}px) / 2))`
+
+/** Hover/focus tooltip for the opinion-group ⓘ icon (ported from the 5a mock). */
+const GTIP_CSS = `
+.v2gtip{position:relative;display:inline-flex}
+.v2gtip>.v2gtipbox{position:absolute;top:calc(100% + 8px);left:-4px;width:264px;background:#1f2a44;color:#dbe2ef;font-size:12px;line-height:1.75;font-weight:400;text-align:left;padding:13px 15px;border-radius:11px;box-shadow:0 14px 34px -10px rgba(20,24,40,.55);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s;z-index:60;pointer-events:none}
+.v2gtip:hover>.v2gtipbox,.v2gtip:focus-within>.v2gtipbox{opacity:1;visibility:visible;transform:translateY(0)}
+.v2gtipbox p{margin:0 0 9px}
+.v2gtipbox p:last-child{margin:0}
+`
 
 type VM = ReturnType<typeof useVotingScreen>
-
-/** Activates a click handler on Enter/Space for keyboard accessibility. */
-const activateOnKey = (fn: () => void) => (e: KeyboardEvent) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault()
-    fn()
-  }
-}
 
 interface DesktopDockProps {
   s: Translations
@@ -141,12 +147,25 @@ const cardStyle: CSSProperties = {
   border: '1px solid #e7ebf2'
 }
 
+/** "残り {{n}} 問" with the count emphasized in indigo. */
+function RemainingCount({ s, remaining }: { s: Translations; remaining: number | undefined }) {
+  const [before, after] = s.v2RemainingCount.split('{{n}}')
+  return (
+    <span style={{ fontSize: 14, color: '#6b7488', whiteSpace: 'nowrap' }}>
+      {before}
+      <b style={{ color: INDIGO, fontSize: 14 }}>{remaining ?? '—'}</b>
+      {after}
+    </span>
+  )
+}
+
 export default function DesktopDock({ s, topic, description, vm }: DesktopDockProps) {
   const showMap = vm.groupsEnabled && vm.hasPca
 
   return (
     <div
       style={{
+        position: 'relative',
         width: '100%',
         height: '100vh',
         display: 'flex',
@@ -155,105 +174,97 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
         overflow: 'hidden'
       }}
     >
-      {/* header bar */}
-      <div
-        style={{
-          flex: 'none',
-          background: INK,
-          color: '#fff',
-          padding: '18px 32px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 24
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 14,
-              letterSpacing: '.08em',
-              fontWeight: 700,
-              color: '#8fa0c4',
-              marginBottom: 4
-            }}
-          >
-            {s.v2HeroTagline}
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.3 }}>{topic}</div>
-          {description && (
+      <style>{GTIP_CSS}</style>
+      {/* header bar — full-bleed background, content constrained to the 900px band */}
+      <div style={{ flex: 'none', background: INK, color: '#fff' }}>
+        <div
+          style={{
+            maxWidth: STAGE_MAX,
+            width: '100%',
+            margin: '0 auto',
+            padding: '18px 0 18px 32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
-                fontSize: 16,
-                lineHeight: 1.6,
-                color: '#c3ccdd',
-                marginTop: 6,
-                whiteSpace: 'pre-line'
+                fontSize: 14,
+                letterSpacing: '.08em',
+                fontWeight: 700,
+                color: '#8fa0c4',
+                marginBottom: 4
               }}
             >
-              {description}
+              {s.v2HeroTagline}
             </div>
-          )}
-        </div>
-        <div style={{ flex: 'none', width: 300 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 7
-            }}
-          >
-            <span style={{ fontSize: 14, color: '#c3ccdd' }}>{s.v2VotingProgress}</span>
-            <span style={{ fontSize: 14, color: '#c3ccdd' }}>
-              {(() => {
-                const [before, after] = s.v2RemainingCount.split('{{n}}')
-                return (
-                  <>
-                    {before}
-                    <b style={{ color: '#fff', fontSize: 14 }}>{vm.remaining ?? '—'}</b>
-                    {after}
-                  </>
-                )
-              })()}
-            </span>
+            <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.3 }}>{topic}</div>
+            {description && (
+              <div
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.6,
+                  color: '#c3ccdd',
+                  marginTop: 6,
+                  whiteSpace: 'pre-line'
+                }}
+              >
+                {description}
+              </div>
+            )}
           </div>
-          <div
-            style={{
-              height: 7,
-              borderRadius: 4,
-              background: 'rgba(255,255,255,.16)',
-              overflow: 'hidden'
-            }}
-          >
-            <div
-              style={{
-                height: '100%',
-                borderRadius: 4,
-                background: '#fff',
-                width: vm.progressPct != null ? `${vm.progressPct}%` : '25%',
-                opacity: vm.progressPct != null ? 1 : 0.4,
-                transition: 'width .4s ease'
-              }}
-            />
-          </div>
+          {/* reserve the right column so the floating vote panel (which bleeds
+              up through the header) never overlaps the title/description. */}
+          <div style={{ flex: 'none', width: 380 }} aria-hidden="true" />
         </div>
       </div>
 
-      {/* main split */}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        {/* left: groups */}
-        <div style={{ flex: 1, minWidth: 0, overflow: 'auto', padding: '28px 32px' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
-          <div
-            style={{
-              fontSize: 14,
-              lineHeight: 1.6,
-              color: '#8794ad',
-              marginTop: 4,
-              maxWidth: 560
-            }}
-          >
-            {s.v2OpinionGroupsDesc} {s.v2VoteInDockHint}
+      {/* main split — content constrained to the 900px band, centered */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+        {/* left: reference groups */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: STAGE_MAX,
+            minWidth: 0,
+            overflow: 'auto',
+            padding: '28px 32px',
+            paddingRight: 404
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
+            <span
+              className="v2gtip"
+              tabIndex={0}
+              role="button"
+              aria-label={s.opinionGroups}
+              style={{ outline: 'none' }}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#8794ad"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ cursor: 'pointer', display: 'block' }}
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+              <span className="v2gtipbox">
+                {s.v2GroupsTooltip.split('\n\n').map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </span>
+            </span>
           </div>
 
           <div style={{ display: 'flex', gap: 24, marginTop: 20, alignItems: 'flex-start' }}>
@@ -318,173 +329,157 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
           </div>
         </div>
 
-        {/* right: voting dock */}
-        {vm.sheetOpen ? (
-          <div
-            style={{
-              flex: 'none',
-              width: 360,
-              background: '#fff',
-              borderLeft: '1px solid #e7ebf2'
-            }}
-          >
+        {/* right: floating vote panel (5a — breaks up through the header) */}
+        <aside
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: CARD_RIGHT,
+            bottom: 24,
+            width: 380,
+            background: '#fff',
+            borderRadius: 16,
+            overflow: 'hidden',
+            border: '1px solid rgba(0,0,0,.06)',
+            boxShadow: '0 18px 50px -20px rgba(20,24,40,.4), 0 6px 18px rgba(0,0,0,.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 5
+          }}
+        >
+          {/* progress + primary CTA (always visible) */}
+          <div style={{ flex: 'none', padding: '15px 17px' }}>
             <div
               style={{
-                height: '100%',
                 display: 'flex',
-                flexDirection: 'column',
-                padding: '20px 22px'
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 9
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 700, color: INK }}>
+                {s.v2VotingProgress}
+              </span>
+              <RemainingCount s={s} remaining={vm.remaining} />
+            </div>
+            <div
+              style={{
+                height: 7,
+                borderRadius: 4,
+                background: '#eef1f6',
+                overflow: 'hidden',
+                marginBottom: 13
               }}
             >
               <div
                 style={{
-                  flex: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 9,
-                  marginBottom: 16
+                  height: '100%',
+                  borderRadius: 4,
+                  background: INDIGO,
+                  width: vm.progressPct != null ? `${vm.progressPct}%` : '25%',
+                  opacity: vm.progressPct != null ? 1 : 0.4,
+                  transition: 'width .4s ease'
+                }}
+              />
+            </div>
+            {vm.sheetOpen ? (
+              <button
+                onClick={vm.closeSheet}
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  border: '1.5px solid #e3e6ec',
+                  borderRadius: 11,
+                  background: '#fff',
+                  color: '#6b7488',
+                  fontFamily: 'inherit',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
               >
-                {vm.allDone ? (
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      fontSize: 15,
-                      fontWeight: 700,
-                      color: '#1f7a4d'
-                    }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M20 6 9 17l-5-5" />
-                    </svg>
-                    {s.v2AllAnsweredShort}
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 15, fontWeight: 700, color: INK }}>
-                    {s.v2RemainingCount.replace('{{n}}', String(vm.remaining ?? '—'))}
-                  </span>
-                )}
-                <button
-                  onClick={vm.closeSheet}
-                  title={s.v2Close}
-                  style={{
-                    marginLeft: 'auto',
-                    flex: 'none',
-                    width: 32,
-                    height: 32,
-                    border: 'none',
-                    borderRadius: 9,
-                    background: '#f1f3f8',
-                    color: '#5a6272',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                {s.v2VoteClose}
+              </button>
+            ) : (
+              <button
+                onClick={vm.openSheet}
+                style={{
+                  width: '100%',
+                  padding: 13,
+                  border: 'none',
+                  borderRadius: 12,
+                  background: INDIGO,
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m9 6 6 6-6 6" />
-                  </svg>
-                </button>
-              </div>
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                {s.v2VoteCta}
+              </button>
+            )}
+          </div>
 
+          {/* vote card body — shown when the panel is open */}
+          {vm.sheetOpen && (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                borderTop: '1px solid #eef1f6',
+                padding: '16px 17px'
+              }}
+            >
               {vm.notDone && vm.statement ? (
-                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                  <div
-                    style={{
-                      flex: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      marginBottom: 12
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 9,
-                        background: '#eaeef7',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#8794ad'
-                      }}
-                    >
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />
-                      </svg>
-                    </div>
-                    <div style={{ fontSize: 14, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: INK, lineHeight: 1.6 }}>
+                    {s.v2VotePrompt}
                   </div>
                   <div
-                    style={{ flex: 1, minHeight: 60, position: 'relative', margin: '0 -2px 2px' }}
+                    style={{
+                      marginTop: 12,
+                      border: '1.5px solid #d5def7',
+                      background: '#f7f9fe',
+                      borderRadius: 14,
+                      padding: '14px 15px'
+                    }}
                   >
                     <div
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        overflow: 'auto',
-                        padding: '0 2px 20px'
+                        fontSize: 16,
+                        lineHeight: 1.85,
+                        color: '#25304a',
+                        fontWeight: 500
                       }}
                     >
-                      <div
-                        style={{
-                          fontSize: 16,
-                          lineHeight: 1.85,
-                          color: '#25304a',
-                          fontWeight: 500
-                        }}
-                      >
-                        {vm.statement.txt}
-                      </div>
+                      {vm.statement.txt}
                     </div>
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 28,
-                        background: 'linear-gradient(to top,#fff 20%,rgba(255,255,255,0))',
-                        pointerEvents: 'none'
-                      }}
-                    />
                   </div>
                   <VoteButtons s={s} vm={vm} />
                 </div>
               ) : (
                 <div
                   style={{
-                    flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -504,81 +499,8 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
                 </div>
               )}
             </div>
-          </div>
-        ) : (
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label={s.v2VoteCta}
-            onClick={vm.openSheet}
-            onKeyDown={activateOnKey(vm.openSheet)}
-            title={s.v2VoteCta}
-            style={{
-              flex: 'none',
-              width: 56,
-              background: '#fff',
-              borderLeft: '1px solid #e7ebf2',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: '18px 0',
-              gap: 16
-            }}
-          >
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                background: INDIGO,
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flex: 'none'
-              }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="m15 18-6-6 6-6" />
-              </svg>
-            </div>
-            <div
-              style={{
-                writingMode: 'vertical-rl',
-                fontSize: 14,
-                fontWeight: 700,
-                color: INK,
-                letterSpacing: '.05em'
-              }}
-            >
-              {s.v2VoteCta}
-            </div>
-            <div
-              style={{
-                writingMode: 'vertical-rl',
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#fff',
-                background: INDIGO,
-                padding: '9px 5px',
-                borderRadius: 8
-              }}
-            >
-              {s.v2RemainingCount.replace('{{n}}', String(vm.remaining ?? '—'))}
-            </div>
-          </div>
-        )}
+          )}
+        </aside>
       </div>
     </div>
   )
