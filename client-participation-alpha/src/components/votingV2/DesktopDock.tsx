@@ -148,14 +148,12 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
   return (
     <div
       style={{
-        height: 'clamp(560px, 78vh, 760px)',
+        width: '100%',
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         background: '#f4f6f9',
-        borderRadius: 12,
-        overflow: 'hidden',
-        border: '1px solid #e7ebf2',
-        boxShadow: '0 20px 50px -24px rgba(20,24,40,.35)'
+        overflow: 'hidden'
       }}
     >
       {/* header bar */}
