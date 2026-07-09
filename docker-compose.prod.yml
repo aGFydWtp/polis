@@ -11,6 +11,8 @@
 #  - postgres のデータは EC2 にアタッチした EBS (/mnt/polis-data/postgres) に永続化する
 #  - クライアント/ file-server はビルド時引数にドメイン等が焼き込まれるため .env を入れて --build する
 
+name: polis
+
 services:
   client-participation-alpha:
     build:
