@@ -1,0 +1,385 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchComments, fetchNextComment } from '../../api/comments'
+import { fetchPCAData } from '../../api/pca'
+import type { Comment, PCAData } from '../../api/types'
+import { submitVote } from '../../api/votes'
+import { getConversationToken } from '../../lib/auth'
+import type { Translations } from '../../strings/types'
+import type { StatementData, VoteData } from '../types'
+import { groupLetters, REFRESH_DELAY_MS } from '../visualization/constants'
+import type { SelectedStatement, StatementContext, StatementWithType } from '../visualization/types'
+import { useVisualizationData } from '../visualization/useVisualizationData'
+
+/**
+ * Vote values (raw sign, matching the server / Survey.tsx convention):
+ *   Agree = -1, Disagree = 1, Pass/Hold = 0
+ */
+export const VOTE_AGREE = -1
+export const VOTE_DISAGREE = 1
+export const VOTE_HOLD = 0
+
+export interface GroupInfo {
+  groupId: number
+  /** Display letter (A, B, C, ...) */
+  name: string
+  /** Participant count in this group */
+  count: number
+}
+
+export interface StatChip {
+  tid: number
+  type: 'agree' | 'disagree'
+  /** 1-based index used purely for the chip label */
+  label: number
+}
+
+export interface StatSummary {
+  /** Statement id (tid) */
+  num: number
+  /** Statement text */
+  text: string
+  /** Percentage agreeing/disagreeing (0-100, rounded) */
+  pct: number
+  /** 'agree' | 'disagree' — drives icon/color and stance label */
+  stance: 'agree' | 'disagree'
+}
+
+interface UseVotingScreenArgs {
+  conversation_id: string
+  initialStatement?: StatementData
+  /** vis_type from the conversation; opinion groups only render when === 1 */
+  visType?: number
+  /** Translations, used to resolve vote-failure messages. */
+  s: Translations
+}
+
+/** Maps a vote-submission error to a user-facing message (mirrors Survey.tsx). */
+function resolveVoteError(err: unknown, s: Translations): string {
+  const error = err as { responseText?: string; message?: string }
+  const errorText = error.responseText || error.message || ''
+  if (errorText.includes('polis_err_conversation_is_closed')) return s.convIsClosed
+  if (errorText.includes('polis_err_post_votes_social_needed')) return s.signInToVote
+  if (errorText.includes('polis_err_xid_not_allowed')) return s.xidRequired
+  if (errorText.includes('polis_err_xid_required')) return s.xidRequired
+  return s.voteFailedGeneric
+}
+
+const submitVoteAndGetNext = async (vote: VoteData, conversation_id: string) => {
+  const decodedToken = getConversationToken(conversation_id)
+  const resp = await submitVote({
+    agid: 1,
+    conversation_id,
+    high_priority: false,
+    pid: decodedToken?.pid || -1,
+    tid: vote.tid,
+    vote: vote.vote
+  })
+
+  // Notify the map/visualization data to refetch after a short delay.
+  window.dispatchEvent(new CustomEvent('polis-vote-submitted', { detail: { conversation_id } }))
+
+  return resp
+}
+
+export function useVotingScreen({
+  conversation_id,
+  initialStatement,
+  visType,
+  s
+}: UseVotingScreenArgs) {
+  // ── Voting state ──────────────────────────────────────────────
+  const [statement, setStatement] = useState<StatementData | undefined>(initialStatement)
+  const [isFetchingNext, setIsFetchingNext] = useState(false)
+  const [voteError, setVoteError] = useState<string | null>(null)
+  const [total, setTotal] = useState<number | undefined>(undefined)
+  // Distinguish "still loading first comment" from "genuinely done".
+  const [hasLoadedFirst, setHasLoadedFirst] = useState<boolean>(!!initialStatement)
+
+  // ── Sheet / dock open state ───────────────────────────────────
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  // ── PCA / map state ───────────────────────────────────────────
+  const [pcaData, setPcaData] = useState<PCAData | null>(null)
+  const [comments, setComments] = useState<Comment[] | null>(null)
+  const currentMathTick = useRef<number | undefined>(undefined)
+  const refetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Selection state (lifted from PCAVisualization) ────────────
+  const [selectedGroup, setSelectedGroup] = useState<number | null>(null)
+  const [isConsensusSelected, setIsConsensusSelected] = useState(false)
+  const [selectedStatement, setSelectedStatement] = useState<SelectedStatement | null>(null)
+  const [userPid, setUserPid] = useState<number | null>(null)
+
+  // ── Personalized first comment (mirrors Survey.tsx) ───────────
+  useEffect(() => {
+    let cancelled = false
+    const loadFirst = async () => {
+      try {
+        const resp = await fetchNextComment(conversation_id)
+        if (cancelled) return
+        if (resp && typeof resp.tid !== 'undefined') {
+          setStatement((prev) => {
+            const mapped: StatementData = {
+              tid: resp.tid as number,
+              txt: resp.txt,
+              remaining: resp.remaining,
+              lang: resp.lang,
+              translations: resp.translations
+            }
+            return !prev || mapped.tid !== prev.tid ? mapped : prev
+          })
+          if (typeof resp.total === 'number') setTotal(resp.total)
+        } else {
+          setStatement(undefined)
+        }
+      } catch (e) {
+        console.warn('v2: personalized first comment fetch failed', e)
+      } finally {
+        if (!cancelled) setHasLoadedFirst(true)
+      }
+    }
+    loadFirst()
+    return () => {
+      cancelled = true
+    }
+  }, [conversation_id])
+
+  // ── User pid for the map indicator ────────────────────────────
+  useEffect(() => {
+    const updatePid = () => {
+      const token = getConversationToken(conversation_id)
+      if (token && typeof token.pid === 'number' && token.pid >= 0) {
+        setUserPid(token.pid)
+      } else {
+        setUserPid(null)
+      }
+    }
+    updatePid()
+    const handleTokenUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail && detail.conversation_id === conversation_id) updatePid()
+    }
+    window.addEventListener('polis-token-update', handleTokenUpdate)
+    return () => window.removeEventListener('polis-token-update', handleTokenUpdate)
+  }, [conversation_id])
+
+  // ── PCA data load + refetch-on-vote (mirrors VisualizationContainer) ──
+  const groupsEnabled = visType === 1
+  const loadPca = useCallback(async () => {
+    if (!groupsEnabled) return
+    try {
+      const pcaKeys: Array<keyof PCAData> = [
+        'base-clusters',
+        'group-clusters',
+        'group-aware-consensus',
+        'group-votes',
+        'repness',
+        'mathTick'
+      ]
+      const [pca, cmts] = await Promise.all([
+        fetchPCAData(conversation_id, pcaKeys),
+        fetchComments(conversation_id)
+      ])
+      if (pca.mathTick !== undefined && pca.mathTick === currentMathTick.current) return
+      currentMathTick.current = pca.mathTick
+      setPcaData(pca)
+      setComments(cmts)
+    } catch (e) {
+      console.warn('v2: PCA fetch failed', e)
+    }
+  }, [conversation_id, groupsEnabled])
+
+  useEffect(() => {
+    loadPca()
+  }, [loadPca])
+
+  useEffect(() => {
+    if (!groupsEnabled) return
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail && detail.conversation_id === conversation_id) {
+        if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current)
+        refetchTimeoutRef.current = setTimeout(() => loadPca(), REFRESH_DELAY_MS)
+      }
+    }
+    window.addEventListener('polis-vote-submitted', onChange)
+    window.addEventListener('polis-comment-submitted', onChange)
+    return () => {
+      window.removeEventListener('polis-vote-submitted', onChange)
+      window.removeEventListener('polis-comment-submitted', onChange)
+      if (refetchTimeoutRef.current) clearTimeout(refetchTimeoutRef.current)
+    }
+  }, [conversation_id, groupsEnabled, loadPca])
+
+  // ── Derived visualization data (reuses existing hook) ─────────
+  const hasPca = !!pcaData && (pcaData['group-clusters']?.length ?? 0) > 0
+  const emptyPca: PCAData = useMemo(
+    () => ({ 'base-clusters': { x: [], y: [], id: [], count: [] }, 'group-clusters': [] }),
+    []
+  )
+  const viz = useVisualizationData(
+    hasPca ? (pcaData as PCAData) : emptyPca,
+    selectedGroup,
+    isConsensusSelected,
+    selectedStatement?.tid ?? null,
+    userPid
+  )
+
+  const groups: GroupInfo[] = useMemo(
+    () =>
+      viz.hulls.map((h) => ({
+        groupId: h.groupId,
+        name: groupLetters[h.groupId] ?? String(h.groupId + 1),
+        count: h.participantCount
+      })),
+    [viz.hulls]
+  )
+
+  // Comment text lookup for chips/stat
+  const commentText = useCallback(
+    (tid: number) => comments?.find((c) => c.tid === tid)?.txt ?? '',
+    [comments]
+  )
+
+  const chips: StatChip[] = useMemo(
+    () =>
+      viz.statements.map((st: StatementWithType, i) => ({
+        tid: st.tid,
+        type: st.type,
+        label: i + 1
+      })),
+    [viz.statements]
+  )
+
+  // Stat card for the currently selected statement
+  const stat: StatSummary | null = useMemo(() => {
+    if (!selectedStatement) return null
+    const stance = selectedStatement.type
+    // Aggregate agree/disagree across the relevant scope.
+    let agree = 0
+    let disagree = 0
+    if (selectedStatement.context === 'consensus') {
+      viz.groupVoteData.forEach((g) => {
+        agree += g.agree
+        disagree += g.disagree
+      })
+    } else {
+      const gid = selectedStatement.context.groupId
+      const g = viz.groupVoteData.find((v) => v.groupId === gid)
+      if (g) {
+        agree = g.agree
+        disagree = g.disagree
+      }
+    }
+    const denom = agree + disagree
+    const pct = denom > 0 ? Math.round(((stance === 'agree' ? agree : disagree) / denom) * 100) : 0
+    return { num: selectedStatement.tid, text: commentText(selectedStatement.tid), pct, stance }
+  }, [selectedStatement, viz.groupVoteData, commentText])
+
+  // ── Selection handlers (group / consensus / statement are exclusive) ──
+  const selectGroup = useCallback((groupId: number | null) => {
+    setSelectedGroup((prev) => (prev === groupId ? null : groupId))
+    setIsConsensusSelected(false)
+    setSelectedStatement(null)
+  }, [])
+
+  const toggleConsensus = useCallback(() => {
+    setIsConsensusSelected((prev) => {
+      const next = !prev
+      if (next) setSelectedGroup(null)
+      return next
+    })
+    setSelectedStatement(null)
+  }, [])
+
+  const selectChip = useCallback(
+    (chip: StatChip) => {
+      const context: StatementContext = isConsensusSelected
+        ? 'consensus'
+        : { groupId: selectedGroup as number }
+      setSelectedStatement((prev) =>
+        prev && prev.tid === chip.tid
+          ? null
+          : { tid: chip.tid, pSuccess: 0, type: chip.type, context }
+      )
+    },
+    [isConsensusSelected, selectedGroup]
+  )
+
+  // ── Sheet controls ────────────────────────────────────────────
+  const openSheet = useCallback(() => setSheetOpen(true), [])
+  const closeSheet = useCallback(() => setSheetOpen(false), [])
+  const toggleSheet = useCallback(() => setSheetOpen((v) => !v), [])
+
+  // ── Voting ────────────────────────────────────────────────────
+  const vote = useCallback(
+    async (voteType: number) => {
+      if (!statement) return
+      setIsFetchingNext(true)
+      setVoteError(null)
+      try {
+        const result = await submitVoteAndGetNext(
+          { vote: voteType, tid: statement.tid },
+          conversation_id
+        )
+        if (result?.nextComment) {
+          setStatement(result.nextComment)
+          const next = result.nextComment as StatementData & { total?: number }
+          if (typeof next.total === 'number') setTotal(next.total)
+        } else {
+          setStatement(undefined)
+        }
+      } catch (err: unknown) {
+        console.error('v2: vote submission failed', err)
+        setVoteError(resolveVoteError(err, s))
+      } finally {
+        setIsFetchingNext(false)
+      }
+    },
+    [statement, conversation_id, s]
+  )
+
+  // ── Progress ──────────────────────────────────────────────────
+  const remaining = statement?.remaining
+  const progressPct = useMemo(() => {
+    if (typeof total === 'number' && total > 0 && typeof remaining === 'number') {
+      return Math.max(0, Math.min(100, Math.round(((total - remaining) / total) * 100)))
+    }
+    return null
+  }, [total, remaining])
+
+  const notDone = !!statement
+  const allDone = hasLoadedFirst && !statement
+
+  return {
+    // voting
+    statement,
+    remaining,
+    total,
+    progressPct,
+    notDone,
+    allDone,
+    isFetchingNext,
+    voteError,
+    vote,
+    // sheet
+    sheetOpen,
+    openSheet,
+    closeSheet,
+    toggleSheet,
+    // groups / map
+    groupsEnabled,
+    hasPca,
+    pcaData,
+    viz,
+    groups,
+    chips,
+    stat,
+    selectedGroup,
+    isConsensusSelected,
+    selectedStatement,
+    selectGroup,
+    toggleConsensus,
+    selectChip
+  }
+}
