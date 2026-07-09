@@ -67,6 +67,6 @@ export default function VotingScreen({
   return isMobile ? (
     <MobileBottomSheet s={s} topic={topic} description={description} vm={vm} />
   ) : (
-    <DesktopDock s={s} topic={topic} vm={vm} />
+    <DesktopDock s={s} topic={topic} description={description} vm={vm} />
   )
 }

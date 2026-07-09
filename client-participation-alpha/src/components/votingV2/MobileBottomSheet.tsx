@@ -29,7 +29,7 @@ function RemainingCount({ template, n }: { template: string; n: number | undefin
   const value = typeof n === 'number' ? n : '—'
   const [before, after] = template.split('{{n}}')
   return (
-    <span style={{ fontSize: 12, color: '#6b7488' }}>
+    <span style={{ fontSize: 14, color: '#6b7488' }}>
       {before}
       <b style={{ color: INDIGO, fontSize: 14 }}>{value}</b>
       {after}
@@ -127,7 +127,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
             background: '#fdecea',
             border: '1px solid #f5c6c2',
             color: '#b3261e',
-            fontSize: 12.5,
+            fontSize: 14,
             lineHeight: 1.5
           }}
         >
@@ -180,9 +180,7 @@ function DoneBlock({ s }: { s: Translations }) {
       <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1f7a4d' }}>
         {s.v2AllAnsweredTitle}
       </div>
-      <div style={{ fontSize: 12.5, lineHeight: 1.75, color: '#5a7a68' }}>
-        {s.v2AllAnsweredBody}
-      </div>
+      <div style={{ fontSize: 14, lineHeight: 1.75, color: '#5a7a68' }}>{s.v2AllAnsweredBody}</div>
     </div>
   )
 }
@@ -218,7 +216,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
       <div style={{ background: INK, color: '#fff', padding: '16px 20px 22px' }}>
         <div
           style={{
-            fontSize: 11,
+            fontSize: 14,
             letterSpacing: '.08em',
             fontWeight: 700,
             color: '#8fa0c4',
@@ -227,9 +225,17 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         >
           {s.v2HeroTagline}
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.35 }}>{topic}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.35 }}>{topic}</div>
         {description && (
-          <div style={{ fontSize: 12.5, lineHeight: 1.7, color: '#c3ccdd', marginTop: 8 }}>
+          <div
+            style={{
+              fontSize: 16,
+              lineHeight: 1.7,
+              color: '#c3ccdd',
+              marginTop: 8,
+              whiteSpace: 'pre-line'
+            }}
+          >
             {description}
           </div>
         )}
@@ -254,7 +260,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
               marginBottom: 9
             }}
           >
-            <span style={{ fontSize: 12, fontWeight: 700, color: INK }}>{s.v2VotingProgress}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.v2VotingProgress}</span>
             <RemainingCount template={s.v2RemainingCount} n={vm.remaining} />
           </div>
           <div
@@ -302,7 +308,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
               >
                 {s.v2VoteCta}
               </button>
-              <div style={{ textAlign: 'center', fontSize: 11, color: '#9aa2b1', marginTop: 9 }}>
+              <div style={{ textAlign: 'center', fontSize: 14, color: '#9aa2b1', marginTop: 9 }}>
                 {s.v2CtaHint}
               </div>
             </>
@@ -320,7 +326,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
               <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1f7a4d', marginTop: 8 }}>
                 {s.v2AllAnsweredTitle}
               </div>
-              <div style={{ fontSize: 12, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
+              <div style={{ fontSize: 14, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
                 {s.v2AllAnsweredBody}
               </div>
             </div>
@@ -330,7 +336,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         {/* Opinion groups */}
         <div style={{ marginTop: 20, marginBottom: 10 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
+          <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
             {s.v2OpinionGroupsDesc}
           </div>
         </div>
@@ -359,7 +365,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                 style={{
                   padding: '48px 16px',
                   textAlign: 'center',
-                  fontSize: 12.5,
+                  fontSize: 14,
                   color: '#8794ad'
                 }}
               >
@@ -504,7 +510,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span
                 style={{
-                  fontSize: 11.5,
+                  fontSize: 14,
                   fontWeight: 700,
                   color: vm.sheetOpen ? '#9aa2b1' : INDIGO
                 }}
@@ -591,9 +597,9 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                       <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />
                     </svg>
                   </div>
-                  <div style={{ fontSize: 12, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
+                  <div style={{ fontSize: 14, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
                 </div>
-                <div style={{ flex: 1, minHeight: 44, position: 'relative', margin: '0 -2px 2px' }}>
+                <div style={{ flex: 1, minHeight: 96, position: 'relative', margin: '0 -2px 2px' }}>
                   <div
                     style={{
                       position: 'absolute',

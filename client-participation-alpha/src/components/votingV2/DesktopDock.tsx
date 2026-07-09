@@ -20,6 +20,7 @@ const activateOnKey = (fn: () => void) => (e: KeyboardEvent) => {
 interface DesktopDockProps {
   s: Translations
   topic: string
+  description: string
   vm: VM
 }
 
@@ -59,7 +60,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
             background: '#fdecea',
             border: '1px solid #f5c6c2',
             color: '#b3261e',
-            fontSize: 12.5,
+            fontSize: 14,
             lineHeight: 1.5
           }}
         >
@@ -140,7 +141,7 @@ const cardStyle: CSSProperties = {
   border: '1px solid #e7ebf2'
 }
 
-export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
+export default function DesktopDock({ s, topic, description, vm }: DesktopDockProps) {
   const showMap = vm.groupsEnabled && vm.hasPca
 
   return (
@@ -160,7 +161,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
           flex: 'none',
           background: INK,
           color: '#fff',
-          padding: '18px 28px',
+          padding: '18px 32px',
           display: 'flex',
           alignItems: 'center',
           gap: 24
@@ -169,7 +170,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: 11,
+              fontSize: 14,
               letterSpacing: '.08em',
               fontWeight: 700,
               color: '#8fa0c4',
@@ -178,9 +179,22 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
           >
             {s.v2HeroTagline}
           </div>
-          <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.3 }}>{topic}</div>
+          <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.3 }}>{topic}</div>
+          {description && (
+            <div
+              style={{
+                fontSize: 16,
+                lineHeight: 1.6,
+                color: '#c3ccdd',
+                marginTop: 6,
+                whiteSpace: 'pre-line'
+              }}
+            >
+              {description}
+            </div>
+          )}
         </div>
-        <div style={{ flex: 'none', width: 280 }}>
+        <div style={{ flex: 'none', width: 300 }}>
           <div
             style={{
               display: 'flex',
@@ -189,8 +203,8 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
               marginBottom: 7
             }}
           >
-            <span style={{ fontSize: 11.5, color: '#c3ccdd' }}>{s.v2VotingProgress}</span>
-            <span style={{ fontSize: 12, color: '#c3ccdd' }}>
+            <span style={{ fontSize: 14, color: '#c3ccdd' }}>{s.v2VotingProgress}</span>
+            <span style={{ fontSize: 14, color: '#c3ccdd' }}>
               {(() => {
                 const [before, after] = s.v2RemainingCount.split('{{n}}')
                 return (
@@ -232,7 +246,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
           <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
           <div
             style={{
-              fontSize: 12.5,
+              fontSize: 14,
               lineHeight: 1.6,
               color: '#8794ad',
               marginTop: 4,
@@ -260,7 +274,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
                     style={{
                       padding: '64px 16px',
                       textAlign: 'center',
-                      fontSize: 13,
+                      fontSize: 14,
                       color: '#8794ad'
                     }}
                   >
@@ -429,7 +443,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
                         <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />
                       </svg>
                     </div>
-                    <div style={{ fontSize: 12, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
+                    <div style={{ fontSize: 14, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
                   </div>
                   <div
                     style={{ flex: 1, minHeight: 60, position: 'relative', margin: '0 -2px 2px' }}
@@ -484,7 +498,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
                   <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1f7a4d' }}>
                     {s.v2AllAnsweredTitle}
                   </div>
-                  <div style={{ fontSize: 12.5, lineHeight: 1.75, color: '#5a7a68' }}>
+                  <div style={{ fontSize: 14, lineHeight: 1.75, color: '#5a7a68' }}>
                     {s.v2AllAnsweredBody}
                   </div>
                 </div>
@@ -553,7 +567,7 @@ export default function DesktopDock({ s, topic, vm }: DesktopDockProps) {
             <div
               style={{
                 writingMode: 'vertical-rl',
-                fontSize: 11,
+                fontSize: 14,
                 fontWeight: 700,
                 color: '#fff',
                 background: INDIGO,

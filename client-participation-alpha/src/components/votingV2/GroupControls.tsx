@@ -20,7 +20,7 @@ const majorStyle = (active: boolean): CSSProperties => ({
   border: 'none',
   borderRadius: 10,
   fontFamily: 'inherit',
-  fontSize: 12.5,
+  fontSize: 14,
   fontWeight: 700,
   cursor: 'pointer',
   background: active ? INDIGO : '#f1f3f8',
@@ -35,7 +35,7 @@ const groupStyle = (active: boolean): CSSProperties => ({
   border: 'none',
   borderRadius: 9,
   fontFamily: 'inherit',
-  fontSize: 12,
+  fontSize: 14,
   fontWeight: 700,
   cursor: 'pointer',
   background: active ? INDIGO : '#eaeef7',
@@ -48,7 +48,7 @@ const chipStyle = (active: boolean): CSSProperties => ({
   border: 'none',
   borderRadius: 8,
   fontFamily: 'inherit',
-  fontSize: 11.5,
+  fontSize: 14,
   fontWeight: 700,
   cursor: 'pointer',
   background: active ? INDIGO : '#eaeef7',
@@ -104,7 +104,7 @@ export default function GroupControls({
           {s.v2MajorOpinion}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#8794ad', flex: 'none' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#8794ad', flex: 'none' }}>
             {s.v2GroupLabel}
           </span>
           {groups.map((g) => (
@@ -114,7 +114,7 @@ export default function GroupControls({
               onClick={() => onSelectGroup(g.groupId)}
             >
               {g.name}{' '}
-              <span style={{ fontSize: 11, opacity: 0.7 }}>
+              <span style={{ fontSize: 14, opacity: 0.7 }}>
                 {tpl(s.v2PeopleCount, { n: g.count })}
               </span>
             </button>
@@ -126,7 +126,7 @@ export default function GroupControls({
 
       <div
         style={{
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: 700,
           color: '#8794ad',
           margin: divider ? '0 0 9px' : '15px 0 8px'
@@ -136,7 +136,7 @@ export default function GroupControls({
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {chips.length === 0 ? (
-          <span style={{ fontSize: 11.5, color: '#9aa2b1' }}>—</span>
+          <span style={{ fontSize: 14, color: '#9aa2b1' }}>—</span>
         ) : (
           chips.map((chip) => (
             <button
@@ -186,12 +186,12 @@ export function StatCard({ s, stat, variant }: StatCardProps) {
   return (
     <div style={wrapperStyle}>
       <div style={{ display: 'flex', gap: 9 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: INDIGO, flex: 'none' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: INDIGO, flex: 'none' }}>
           #{stat.num}
         </div>
         <div
           style={{
-            fontSize: variant === 'mobile' ? 13.5 : 13,
+            fontSize: 14,
             lineHeight: 1.7,
             color: '#25304a',
             fontWeight: 500
@@ -226,9 +226,7 @@ export function StatCard({ s, stat, variant }: StatCardProps) {
         >
           {icon}
         </div>
-        <div style={{ fontSize: variant === 'mobile' ? 12.5 : 12, color: '#5a6272' }}>
-          {reaction}
-        </div>
+        <div style={{ fontSize: 14, color: '#5a6272' }}>{reaction}</div>
       </div>
     </div>
   )
