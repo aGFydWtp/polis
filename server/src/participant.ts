@@ -16,7 +16,7 @@ const socialParticipantsCache = new LruCache({
 async function addExtendedParticipantInfo(
   zid: number,
   uid?: number,
-  data?: Record<string, any>
+  data?: Record<string, any>,
 ): Promise<void> {
   if (!data || !_.keys(data).length) {
     return;
@@ -41,7 +41,7 @@ function saveParticipantMetadataChoices(
   zid: number,
   pid: number,
   answers: any[],
-  callback: { (err: any): void; (arg0: number): void }
+  callback: { (err: any): void; (arg0: number): void },
 ) {
   // answers is a list of pmaid
   if (!answers || !answers.length) {
@@ -81,12 +81,12 @@ function saveParticipantMetadataChoices(
               if (err) {
                 logger.error(
                   "polis_err_saving_participant_metadata_choices",
-                  err
+                  err,
                 );
                 return cb(err);
               }
               cb(0);
-            }
+            },
           );
         },
         function (err: any) {
@@ -96,20 +96,20 @@ function saveParticipantMetadataChoices(
           }
           // finished with all the inserts
           callback(0);
-        }
+        },
       );
-    }
+    },
   );
 }
 
 function saveParticipantMetadataChoicesP(
   zid: number,
   pid: number,
-  answers: any
+  answers: any,
 ) {
   return new Promise(function (
     resolve: (arg0: number) => void,
-    reject: (arg0: any) => void
+    reject: (arg0: any) => void,
   ) {
     saveParticipantMetadataChoices(zid, pid, answers, function (err: any) {
       if (err) {
@@ -125,7 +125,7 @@ function tryToJoinConversation(
   zid: number,
   uid?: number,
   info?: any,
-  pmaid_answers?: string | any[]
+  pmaid_answers?: string | any[],
 ) {
   function doAddExtendedParticipantInfo() {
     if (info && _.keys(info).length > 0) {
@@ -165,7 +165,7 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
     // First insert into participants_extended (ignore duplicates)
     await client.query(
       "INSERT INTO participants_extended (zid, uid) VALUES ($1, $2) ON CONFLICT (zid, uid) DO NOTHING;",
-      [zid, uid]
+      [zid, uid],
     );
     logger.debug("participants_extended insert/skip successful", { zid, uid });
 
@@ -178,7 +178,7 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
       try {
         const partResult = await client.query(
           "INSERT INTO participants (pid, zid, uid, created) VALUES (NULL, $1, $2, default) RETURNING *;",
-          [zid, uid]
+          [zid, uid],
         );
         await client.query("COMMIT");
         logger.debug("participants insert successful", {
@@ -194,10 +194,13 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
 
           if (constraint === "participants_zid_uid_key") {
             // Same uid already has a participant row — fetch and return it.
-            logger.debug("Participant already exists (uid constraint), fetching", { zid, uid });
+            logger.debug(
+              "Participant already exists (uid constraint), fetching",
+              { zid, uid },
+            );
             const selectResult = await client.query(
               "SELECT * FROM participants WHERE zid = $1 AND uid = $2;",
-              [zid, uid]
+              [zid, uid],
             );
             if (selectResult.rows && selectResult.rows.length > 0) {
               return selectResult.rows;
@@ -208,14 +211,26 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
 
           // participants_zid_pid_key: a concurrent new-user INSERT grabbed the
           // same MAX(pid)+1 before the advisory lock was released.
-          // Re-run the INSERT so the trigger recalculates a fresh pid.
+          // pid_auto uses pg_advisory_lock (session-level) which is NOT
+          // released on ROLLBACK — only pid_auto_unlock (AFTER INSERT) does it.
+          // Since the INSERT failed the AFTER trigger never ran, so the lock
+          // is still held. Release it manually before retrying so the trigger
+          // can re-acquire it and recompute a fresh MAX(pid)+1.
           pidAttempt++;
           if (pidAttempt < MAX_PID_RETRIES) {
-            logger.warn("PID collision on insert, retrying", { zid, uid, attempt: pidAttempt, constraint });
+            logger.warn("PID collision on insert, retrying", {
+              zid,
+              uid,
+              attempt: pidAttempt,
+              constraint,
+            });
+            // Release the stale session-level advisory lock (magic id matches pid_auto trigger).
+            await client.query("SELECT pg_advisory_unlock(873791983, $1)", [zid]);
+            await new Promise((r) => setTimeout(r, 10 * pidAttempt));
             await client.query("BEGIN");
             await client.query(
               "INSERT INTO participants_extended (zid, uid) VALUES ($1, $2) ON CONFLICT (zid, uid) DO NOTHING;",
-              [zid, uid]
+              [zid, uid],
             );
             continue;
           }
@@ -250,7 +265,7 @@ function joinConversation(
   zid: number,
   uid?: number,
   info?: {},
-  pmaid_answers?: any
+  pmaid_answers?: any,
 ) {
   function tryJoin() {
     return tryToJoinConversation(zid, uid, info, pmaid_answers);
@@ -291,7 +306,7 @@ function addParticipantAndMetadata(
   req?: {
     p: { parent_url?: any; [key: string]: any };
     headers?: { [x: string]: any };
-  }
+  },
 ) {
   const info: { [key: string]: string } = {};
   const parent_url = req?.p?.parent_url;
@@ -332,7 +347,7 @@ function getSocialParticipants(
   limit?: any,
   mod?: number,
   math_tick?: any,
-  authorUids?: any[]
+  authorUids?: any[],
 ) {
   // NOTE ignoring authorUids as part of cacheKey for now, just because.
   const cacheKey = [zid, limit, mod, math_tick].join("_");
@@ -400,7 +415,7 @@ function getSocialParticipants(
 
 async function getParticipantByPermanentCookie(
   zid: number,
-  permanentCookie: string
+  permanentCookie: string,
 ): Promise<{ uid: number; pid: number } | null> {
   return new Promise((resolve) => {
     pg.query(
@@ -424,7 +439,7 @@ async function getParticipantByPermanentCookie(
         } else {
           resolve(null);
         }
-      }
+      },
     );
   });
 }
