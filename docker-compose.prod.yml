@@ -44,6 +44,7 @@ services:
       target: prod
       args:
         NODE_ENV: production
+    container_name: server
     env_file:
       - .env
     environment:
