@@ -11,6 +11,8 @@ const STAGE_MAX = 1024
 /** Right inset that pins the floating card to the centered band's right edge (0 once the
     viewport is narrower than the band). */
 const CARD_RIGHT = `max(0px, calc((100% - ${STAGE_MAX}px) / 2))`
+/** Collapsed card height — enough for the progress row + CTA button. */
+const CLOSED_CARD_H = 132
 
 /** Hover/focus tooltip for the opinion-group ⓘ icon (ported from the 5a mock). */
 const GTIP_CSS = `
@@ -335,9 +337,10 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             position: 'absolute',
             top: 16,
             right: CARD_RIGHT,
-            // Height follows content so the card is compact when closed and grows
-            // when opened, capped to the viewport (body scrolls past the cap).
-            maxHeight: 'calc(100% - 40px)',
+            // Open → full viewport height; closed → just the progress + CTA row.
+            // Animating between the two fixed heights gives the grow/shrink motion.
+            height: vm.sheetOpen ? 'calc(100% - 40px)' : CLOSED_CARD_H,
+            transition: 'height .32s cubic-bezier(.4, 0, .2, 1)',
             width: 380,
             background: '#fff',
             borderRadius: 16,
