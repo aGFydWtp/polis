@@ -172,51 +172,66 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
     // Second insert into participants table.
     // The pid_auto trigger acquires an advisory lock and assigns pid = MAX(pid)+1.
     // The pid_auto_unlock trigger releases the lock after insert.
-    try {
-      const partResult = await client.query(
-        "INSERT INTO participants (pid, zid, uid, created) VALUES (NULL, $1, $2, default) RETURNING *;",
-        [zid, uid]
-      );
-      await client.query("COMMIT");
-      logger.debug("participants insert successful", {
-        zid,
-        uid,
-        pid: partResult.rows[0]?.pid,
-      });
-      return partResult.rows;
-    } catch (partErr: any) {
-      await client.query("ROLLBACK");
-      if (partErr.code === "23505") {
-        // Duplicate key — participant was created by a concurrent request.
-        // Fetch and return the existing record. This runs after ROLLBACK,
-        // on the same client connection, so isolation is correct.
-        logger.debug(
-          "Participant already exists, fetching existing record",
-          { zid, uid, constraint: partErr.constraint }
-        );
-        const selectResult = await client.query(
-          "SELECT * FROM participants WHERE zid = $1 AND uid = $2;",
+    const MAX_PID_RETRIES = 5;
+    let pidAttempt = 0;
+    while (true) {
+      try {
+        const partResult = await client.query(
+          "INSERT INTO participants (pid, zid, uid, created) VALUES (NULL, $1, $2, default) RETURNING *;",
           [zid, uid]
         );
-        if (selectResult.rows && selectResult.rows.length > 0) {
-          logger.debug("Found existing participant", {
-            zid,
-            uid,
-            pid: selectResult.rows[0].pid,
-          });
-          return selectResult.rows;
+        await client.query("COMMIT");
+        logger.debug("participants insert successful", {
+          zid,
+          uid,
+          pid: partResult.rows[0]?.pid,
+        });
+        return partResult.rows;
+      } catch (partErr: any) {
+        await client.query("ROLLBACK");
+        if (partErr.code === "23505") {
+          const constraint: string = partErr.constraint || "";
+
+          if (constraint === "participants_zid_uid_key") {
+            // Same uid already has a participant row — fetch and return it.
+            logger.debug("Participant already exists (uid constraint), fetching", { zid, uid });
+            const selectResult = await client.query(
+              "SELECT * FROM participants WHERE zid = $1 AND uid = $2;",
+              [zid, uid]
+            );
+            if (selectResult.rows && selectResult.rows.length > 0) {
+              return selectResult.rows;
+            }
+            // Row not visible yet (concurrent uncommitted tx) — rethrow to outer retry
+            throw partErr;
+          }
+
+          // participants_zid_pid_key: a concurrent new-user INSERT grabbed the
+          // same MAX(pid)+1 before the advisory lock was released.
+          // Re-run the INSERT so the trigger recalculates a fresh pid.
+          pidAttempt++;
+          if (pidAttempt < MAX_PID_RETRIES) {
+            logger.warn("PID collision on insert, retrying", { zid, uid, attempt: pidAttempt, constraint });
+            await client.query("BEGIN");
+            await client.query(
+              "INSERT INTO participants_extended (zid, uid) VALUES ($1, $2) ON CONFLICT (zid, uid) DO NOTHING;",
+              [zid, uid]
+            );
+            continue;
+          }
+
+          logger.error("Exhausted PID collision retries", { zid, uid });
+          throw partErr;
         }
-        // Concurrent transaction may not have committed yet — let caller retry
+        logger.error("participants insert failed", {
+          zid,
+          uid,
+          error: partErr.message,
+          code: partErr.code,
+          constraint: partErr.constraint,
+        });
         throw partErr;
       }
-      logger.error("participants insert failed", {
-        zid,
-        uid,
-        error: partErr.message,
-        code: partErr.code,
-        constraint: partErr.constraint,
-      });
-      throw partErr;
     }
   } catch (err) {
     // Ensure rollback on any unexpected error
