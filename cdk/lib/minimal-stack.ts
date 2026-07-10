@@ -130,11 +130,33 @@ export class PolisMinimalStack extends cdk.Stack {
       'mkdir -p /mnt/polis-data/postgres',
       // --- アプリ取得・起動 ---
       'mkdir -p /opt/polis && cd /opt/polis',
-      `[ -d polis ] || git clone --depth 1 -b ${gitBranch} https://github.com/compdemocracy/polis.git polis`,
+      `[ -d polis ] || git clone --depth 1 -b ${gitBranch} https://github.com/aGFydWtp/polis.git polis`,
       'cd /opt/polis/polis',
       `aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > .env`,
       'if ! grep -q "^DATABASE_URL=" .env; then echo "ERROR: DATABASE_URL missing in env parameter"; exit 1; fi',
       'docker compose -f docker-compose.prod.yml up -d --build',
+      // --- systemd サービス: EC2 再起動時に docker compose up -d を自動実行 ---
+      // EventBridge Scheduler は EC2 起動のみ行うため、コンテナはサービスとして自動再起動させる
+      `cat > /etc/systemd/system/polis.service << 'UNIT'
+[Unit]
+Description=Polis docker-compose
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/polis/polis
+ExecStartPre=/bin/bash -c 'aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > /opt/polis/polis/.env'
+ExecStart=/usr/local/lib/docker/cli-plugins/docker-compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/local/lib/docker/cli-plugins/docker-compose -f docker-compose.prod.yml stop
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+UNIT`,
+      'systemctl daemon-reload',
+      'systemctl enable polis.service',
     );
 
     // --- AMI（context の amiId を固定使用。lookup しない） ---
@@ -208,8 +230,8 @@ export class PolisMinimalStack extends cdk.Stack {
     }));
 
     const timeZone = e.scheduleTimeZone ?? 'Asia/Tokyo';
-    const stopCron = e.stopCron ?? 'cron(0 18 * * ? *)';
-    const startCron = e.startCron ?? 'cron(0 10 * * ? *)';
+    const stopCron = e.stopCron ?? 'cron(0 18 ? * MON-FRI *)';
+    const startCron = e.startCron ?? 'cron(0 10 ? * MON-FRI *)';
     // toJsonString でトークン (instanceId) を含む JSON を CFN 解決可能な形にする
     const instanceInput = this.toJsonString({ InstanceIds: [instance.instanceId] });
 
