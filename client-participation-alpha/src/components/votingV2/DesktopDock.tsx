@@ -335,7 +335,9 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             position: 'absolute',
             top: 16,
             right: CARD_RIGHT,
-            bottom: 24,
+            // Height follows content so the card is compact when closed and grows
+            // when opened, capped to the viewport (body scrolls past the cap).
+            maxHeight: 'calc(100% - 40px)',
             width: 380,
             background: '#fff',
             borderRadius: 16,
