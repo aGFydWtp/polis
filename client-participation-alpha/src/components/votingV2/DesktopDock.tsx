@@ -184,6 +184,9 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             maxWidth: STAGE_MAX,
             width: '100%',
             margin: '0 auto',
+            // Tall enough that the collapsed vote card (bottom ≈ 148px) sits within
+            // the header, so full-width content below never collides with it.
+            minHeight: 135,
             padding: '18px 0 18px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -233,7 +236,10 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             minWidth: 0,
             overflow: 'auto',
             padding: '28px 32px',
-            paddingRight: 404
+            // Reserve the card gutter only while it is open; reclaim full width when
+            // collapsed. Transitions in step with the card's grow/shrink.
+            paddingRight: vm.sheetOpen ? 404 : 32,
+            transition: 'padding-right .32s cubic-bezier(.4, 0, .2, 1)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
