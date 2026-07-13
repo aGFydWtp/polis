@@ -129,10 +129,14 @@ async function start() {
 
     const simulatorApp = createAuth0Simulator(simulatorOptions);
 
-    // Start the simulator on HTTP (TLS is terminated at nginx/ALB)
+    // NOTE: @simulacrum/foundation-simulator auto-loads TLS certs from
+    // ~/.simulacrum/certs (mounted into the container) and serves HTTPS when
+    // they are present — nginx proxies to it over https, and the server
+    // container fetches JWKS from https://oidc-simulator:<port>. Without
+    // certs it falls back to plain HTTP and those https callers break.
     await simulatorApp.listen(AUTH_SIMULATOR_PORT);
 
-    console.log(`OIDC Simulator started on HTTP port ${AUTH_SIMULATOR_PORT}`);
+    console.log(`OIDC Simulator started on port ${AUTH_SIMULATOR_PORT}`);
     console.log(`Auth Issuer: ${AUTH_ISSUER}`);
     console.log(`JWKS URI: ${AUTH_ISSUER}.well-known/jwks.json`);
     console.log(`Auth Client ID: ${AUTH_CLIENT_ID}`);
