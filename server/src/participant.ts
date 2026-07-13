@@ -225,7 +225,9 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
               constraint,
             });
             // Release the stale session-level advisory lock (magic id matches pid_auto trigger).
-            await client.query("SELECT pg_advisory_unlock(873791983, $1)", [zid]);
+            await client.query("SELECT pg_advisory_unlock(873791983, $1)", [
+              zid,
+            ]);
             await new Promise((r) => setTimeout(r, 10 * pidAttempt));
             await client.query("BEGIN");
             await client.query(
