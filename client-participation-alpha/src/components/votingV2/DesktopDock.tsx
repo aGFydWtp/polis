@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
+import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
 import OpinionGroupMap from './OpinionGroupMap'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
@@ -135,7 +136,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
           <path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 2.4" />
           <line x1="12" y1="17" x2="12.02" y2="17" />
         </svg>
-        {s.v2Hold}
+        {s.pass}
       </button>
     </div>
   )
@@ -275,8 +276,18 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: 24, marginTop: 20, alignItems: 'flex-start' }}>
-            <div style={{ ...cardStyle, flex: 1, minWidth: 0 }}>
+          {/* While the vote card is open the left column is narrow, so the map and
+              controls stack vertically (5a); when closed they sit side by side. */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: vm.sheetOpen ? 'column' : 'row',
+              gap: 24,
+              marginTop: 20,
+              alignItems: vm.sheetOpen ? 'stretch' : 'flex-start'
+            }}
+          >
+            <div style={{ ...cardStyle, flex: vm.sheetOpen ? 'none' : 1, minWidth: 0 }}>
               <div style={{ borderRadius: 12, background: '#fafbfd', padding: '8px 4px' }}>
                 {showMap ? (
                   <OpinionGroupMap
@@ -307,7 +318,8 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
               <div
                 style={{
                   flex: 'none',
-                  width: 300,
+                  // Full width when stacked under the map; fixed sidebar when in a row.
+                  width: vm.sheetOpen ? '100%' : 300,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 14
@@ -335,6 +347,9 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
               </div>
             )}
           </div>
+
+          {/* みんなの共通意見 — cross-group consensus donut cards (6d) */}
+          <ConsensusSection s={s} items={vm.consensusItems} variant="desktop" />
         </div>
 
         {/* right: floating vote panel (5a — breaks up through the header) */}
@@ -469,22 +484,13 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
                   <div
                     style={{
                       marginTop: 12,
-                      border: '1.5px solid #d5def7',
-                      background: '#f7f9fe',
-                      borderRadius: 14,
-                      padding: '14px 15px'
+                      fontSize: 16,
+                      lineHeight: 1.85,
+                      color: '#25304a',
+                      fontWeight: 500
                     }}
                   >
-                    <div
-                      style={{
-                        fontSize: 16,
-                        lineHeight: 1.85,
-                        color: '#25304a',
-                        fontWeight: 500
-                      }}
-                    >
-                      {vm.statement.txt}
-                    </div>
+                    {vm.statement.txt}
                   </div>
                   <VoteButtons s={s} vm={vm} />
                 </div>

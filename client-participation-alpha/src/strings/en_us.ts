@@ -143,7 +143,7 @@ const s: Translations = {
   // ─────────────────────────────────────────────────────────────
   // Voting screen v2 (?ui=v2)
   // ─────────────────────────────────────────────────────────────
-  v2HeroTagline: "From everyone’s voices, find the next step.",
+  v2HeroTagline: "Polis - From everyone’s opinions, consider the next step.",
   v2VotingProgress: "Voting progress",
   v2RemainingCount: "{{n}} left",
   v2VoteCta: "Vote",
@@ -156,7 +156,6 @@ const s: Translations = {
   v2GroupLabel: "Group",
   v2MajorOpinion: "Major opinions (overall)",
   v2SelectToReact: "Select a statement to see reactions",
-  v2AnonOpinion: "Anonymous statement",
   v2GroupsNotFormed: "Groups haven’t formed yet",
   v2PeopleCount: "{{n}}",
   v2StatReaction: "{{pct}}% of those who voted on this statement chose “{{stance}}”.",
@@ -170,8 +169,11 @@ const s: Translations = {
     "Amazon’s “recommended products” and Netflix’s “recommended movies” use statistics to group users who buy or watch similar things, then show what other users in the same group are buying or watching.\n\n" +
     "Pol.is works the same way. The groups below are made up of people with similar opinions. Click a group to see what characterizes it.",
   v2VotePrompt: "Q. What do you think of this statement?",
-  v2VoteClose: "Close voting",
-  v2Hold: "Hold"
+  v2VoteClose: "Close card",
+  v2ConsensusTitle: "Shared opinions",
+  v2ConsensusSubtitle: "Statements where opinion aligned across groups.",
+  v2ConsensusCenterAgree: "agree",
+  v2ConsensusCount: "({{n}})"
 }
 
 export default s

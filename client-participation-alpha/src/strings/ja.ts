@@ -88,7 +88,7 @@ s.hideTranslationButton = "元の言語に戻す"
 // ─────────────────────────────────────────────────────────────
 // Voting screen v2 (?ui=v2) — 3c モバイル / 4a PC
 // ─────────────────────────────────────────────────────────────
-s.v2HeroTagline = "みんなの声から、次の一歩を見つける。"
+s.v2HeroTagline = "Polis - みんなの意見から、次の一歩を考える。"
 s.v2VotingProgress = "投票の進捗"
 s.v2RemainingCount = "残り {{n}} 問"
 s.v2VoteCta = "意見を投票する"
@@ -101,7 +101,6 @@ s.v2VoteInDockHint = "右の投票ドックで1件ずつ回答してください
 s.v2GroupLabel = "グループ"
 s.v2MajorOpinion = "メジャーな意見（全体）"
 s.v2SelectToReact = "意見を選んで反応を見る"
-s.v2AnonOpinion = "匿名の意見"
 s.v2GroupsNotFormed = "グループはまだ形成されていません"
 s.v2PeopleCount = "{{n}}人"
 s.v2StatReaction = "この意見に投票した {{pct}}% の人が「{{stance}}」しました。"
@@ -115,7 +114,10 @@ s.v2GroupsTooltip =
   "Amazonの「お勧めの商品」、Netflixの「お勧めの映画」は、統計を使用して、類似のものを購入したり視聴しているユーザをグループ化し、同じグループの他のユーザが購入または視聴しているものを表示します。\n\n" +
   "Pol.isでも同様です。グループは以下で確認でき、似たような意見を持つ人々で構成されています。グループをクリックすると、何がそのグループの特徴となっているのかがわかります。"
 s.v2VotePrompt = "Q. この意見に、あなたはどう思いますか？"
-s.v2VoteClose = "投票を閉じる"
-s.v2Hold = "保留"
+s.v2VoteClose = "カードを閉じる"
+s.v2ConsensusTitle = "みんなの共通意見"
+s.v2ConsensusSubtitle = "グループを越えて賛否が一致した意見です。"
+s.v2ConsensusCenterAgree = "が賛成"
+s.v2ConsensusCount = "({{n}}人)"
 
 export default s

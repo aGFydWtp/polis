@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent } from 'react'
 import type { Translations } from '../../strings/types'
+import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
 import OpinionGroupMap from './OpinionGroupMap'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
@@ -156,7 +157,7 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
         onClick={() => vm.vote(VOTE_HOLD)}
       >
         <HoldIcon />
-        {s.v2Hold}
+        {s.pass}
       </button>
     </div>
   )
@@ -393,6 +394,9 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             </>
           )}
         </div>
+
+        {/* みんなの共通意見 — cross-group consensus donut cards (6d) */}
+        <ConsensusSection s={s} items={vm.consensusItems} variant="mobile" />
       </div>
 
       {/* Dim overlay when open */}
@@ -569,35 +573,14 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                 <div
                   style={{
                     flex: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: '#1f2a44',
+                    lineHeight: 1.6,
                     marginBottom: 12
                   }}
                 >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 9,
-                      background: '#eaeef7',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#8794ad'
-                    }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" />
-                    </svg>
-                  </div>
-                  <div style={{ fontSize: 14, color: '#8794ad' }}>{s.v2AnonOpinion}</div>
+                  {s.v2VotePrompt}
                 </div>
                 <div style={{ flex: 1, minHeight: 96, position: 'relative', margin: '0 -2px 2px' }}>
                   <div

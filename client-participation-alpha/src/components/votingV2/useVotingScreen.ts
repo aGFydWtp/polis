@@ -9,6 +9,7 @@ import type { StatementData, VoteData } from '../types'
 import { groupLetters, REFRESH_DELAY_MS } from '../visualization/constants'
 import type { SelectedStatement, StatementContext, StatementWithType } from '../visualization/types'
 import { useVisualizationData } from '../visualization/useVisualizationData'
+import { selectTopConsensusItems } from '../visualization/utils'
 
 /**
  * Vote values (raw sign, matching the server / Survey.tsx convention):
@@ -31,6 +32,20 @@ export interface StatChip {
   type: 'agree' | 'disagree'
   /** 1-based index used purely for the chip label */
   label: number
+}
+
+/** One cross-group consensus statement for the みんなの共通意見 (6d) donut cards. */
+export interface ConsensusStatement {
+  tid: number
+  text: string
+  /** Total vote counts aggregated across all groups. */
+  agree: number
+  disagree: number
+  pass: number
+  /** Percentages of all votes (0-100, rounded). */
+  agreePct: number
+  disagreePct: number
+  passPct: number
 }
 
 export interface StatSummary {
@@ -276,6 +291,46 @@ export function useVotingScreen({
     return { num: selectedStatement.tid, text: commentText(selectedStatement.tid), pct, stance }
   }, [selectedStatement, viz.groupVoteData, commentText])
 
+  // ── Cross-group consensus statements (みんなの共通意見, 6d) ──────
+  const consensusItems: ConsensusStatement[] = useMemo(() => {
+    const consensusScores = pcaData?.['group-aware-consensus']
+    const groupVotes = pcaData?.['group-votes']
+    if (!hasPca || !consensusScores || !groupVotes || !comments) return []
+
+    const items: ConsensusStatement[] = []
+    selectTopConsensusItems(consensusScores).forEach((tidStr) => {
+      const tid = parseInt(tidStr, 10)
+      const comment = comments.find((c) => c.tid === tid)
+      if (!comment) return
+
+      let agree = 0
+      let disagree = 0
+      let pass = 0
+      Object.values(groupVotes).forEach((g) => {
+        const votes = g.votes[tidStr]
+        if (votes) {
+          agree += votes.A
+          disagree += votes.D
+          pass += votes.S
+        }
+      })
+      const total = agree + disagree + pass
+      if (total === 0) return
+
+      items.push({
+        tid,
+        text: comment.txt,
+        agree,
+        disagree,
+        pass,
+        agreePct: Math.round((agree / total) * 100),
+        disagreePct: Math.round((disagree / total) * 100),
+        passPct: Math.round((pass / total) * 100)
+      })
+    })
+    return items
+  }, [hasPca, pcaData, comments])
+
   // ── Selection handlers (group / consensus / statement are exclusive) ──
   const selectGroup = useCallback((groupId: number | null) => {
     setSelectedGroup((prev) => (prev === groupId ? null : groupId))
@@ -378,6 +433,7 @@ export function useVotingScreen({
     groups,
     chips,
     stat,
+    consensusItems,
     selectedGroup,
     isConsensusSelected,
     selectedStatement,

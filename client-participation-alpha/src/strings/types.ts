@@ -100,7 +100,6 @@ export interface Translations {
   v2GroupLabel: string
   v2MajorOpinion: string
   v2SelectToReact: string
-  v2AnonOpinion: string
   v2GroupsNotFormed: string
   v2PeopleCount: string
   v2StatReaction: string
@@ -115,5 +114,12 @@ export interface Translations {
   v2VotePrompt: string
   /** Desktop 5a: collapses the vote panel back to progress + CTA. */
   v2VoteClose: string
-  v2Hold: string
+  /** Consensus section (6d): heading above the donut cards. */
+  v2ConsensusTitle: string
+  /** Consensus section (6d): explanatory subtitle under the heading. */
+  v2ConsensusSubtitle: string
+  /** Consensus section (6d): donut center label shown under the agree %. */
+  v2ConsensusCenterAgree: string
+  /** Consensus section (6d): parenthesized voter-count format, e.g. "({{n}}人)". */
+  v2ConsensusCount: string
 }
