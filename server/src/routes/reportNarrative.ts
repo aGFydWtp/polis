@@ -276,23 +276,29 @@ const getModelResponse = async (
           throw new Error("polis_err_anthropic_api_key_not_set");
         }
         const responseClaude = await anthropic.messages.create({
-          model: modelVersion || "claude-3-7-sonnet-20250219",
-          max_tokens: 3000,
-          temperature: 0,
+          model: modelVersion || "claude-sonnet-5",
+          // max_tokens is a hard cap on thinking + response text combined
+          // (adaptive thinking is on by default on Sonnet 5 / Opus 4.8+), so
+          // this needs real headroom beyond the visible JSON text length.
+          max_tokens: 8000,
+          output_config: { effort: "medium" },
           system: system_lore,
           messages: [
             {
               role: "user",
               content: [{ type: "text", text: prompt_xml }],
             },
-            {
-              role: "assistant",
-              content: [{ type: "text", text: "{" }],
-            },
           ],
         });
-        // Claude API response structure might change with version updates
-        return `{${(responseClaude as any)?.content[0]?.text}`;
+        if (responseClaude.stop_reason === "max_tokens") {
+          logger.warn(
+            "Anthropic narrative report response was truncated by max_tokens; output may be incomplete/invalid JSON."
+          );
+        }
+        const textBlock = responseClaude.content.find((b) => b.type === "text");
+        const rawText = textBlock?.type === "text" ? textBlock.text : "";
+        // Strip markdown code fences if present
+        return rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
       }
       case "openai": {
         if (!openai) {

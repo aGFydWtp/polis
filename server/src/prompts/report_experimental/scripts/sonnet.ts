@@ -135,32 +135,21 @@ async function main() {
   ); // then convert back to xml
   logger.debug(prompt_xml);
   const msg = await anthropic.messages.create({
-    model: "claude-3-7-sonnet-20250219",
-    max_tokens: 1000,
-    temperature: 0,
+    model: "claude-sonnet-5",
+    // max_tokens is a hard cap on thinking + response text combined
+    // (adaptive thinking is on by default on Sonnet 5).
+    max_tokens: 8000,
+    output_config: { effort: "medium" },
     system: system_lore,
     messages: [
       {
         role: "user",
-        content: [
-          {
-            type: "text",
-            text: prompt_xml,
-          },
-        ],
-      },
-      {
-        role: "assistant",
-        content: [
-          {
-            type: "text",
-            text: "{",
-          },
-        ],
+        content: [{ type: "text", text: prompt_xml }],
       },
     ],
   });
-  logger.debug(msg);
+  const textBlock = msg.content.find((b) => b.type === "text");
+  logger.debug(textBlock?.type === "text" ? textBlock.text : "");
 }
 
 main().catch(logger.error);

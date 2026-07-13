@@ -10,11 +10,91 @@ import os
 import json
 import logging
 import requests
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional, Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Claude Fable 5 runs safety classifiers that can decline a request
+# (stop_reason: "refusal", HTTP 200 - not an error). When it's the active
+# model, we opt into server-side fallback so a refusal is transparently
+# retried on another model within the same call, rather than silently
+# producing an empty/missing report. Not supported on the Batch API, so
+# this only applies to the direct (non-batch) HTTP calls below.
+# See: https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback
+FABLE_FALLBACK_MODEL = "claude-opus-4-8"
+FABLE_FALLBACK_BETA_HEADER = "server-side-fallback-2026-06-01"
+
+
+def _anthropic_request_extras(model_name: Optional[str]) -> Dict[str, Any]:
+    """
+    Build the extra headers/body fields needed for a direct (non-batch)
+    Anthropic request, given the active model.
+
+    Returns a dict with "headers" and "body" sub-dicts to merge into the
+    request.
+    """
+    extras: Dict[str, Any] = {"headers": {}, "body": {}}
+    if model_name == "claude-fable-5":
+        extras["headers"]["anthropic-beta"] = FABLE_FALLBACK_BETA_HEADER
+        extras["body"]["fallbacks"] = [{"model": FABLE_FALLBACK_MODEL}]
+    return extras
+
+
+def _narrative_error_json(title: str, text: str) -> str:
+    """Build a report_data JSON blob matching the schema the client UI expects."""
+    return json.dumps({
+        "id": "polis_narrative_error_message",
+        "title": title,
+        "paragraphs": [
+            {
+                "id": "polis_narrative_error_message",
+                "title": title,
+                "sentences": [
+                    {
+                        "clauses": [
+                            {
+                                "text": text,
+                                "citations": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })
+
+
+def _check_response_for_issues(response_json: dict, model_name: Optional[str]) -> Optional[str]:
+    """
+    Inspect a completed (non-refused-via-fallback) Anthropic response for
+    known problem stop reasons. Logs a warning either way, and returns a
+    user-facing error message string if the response should not be treated
+    as usable content (e.g. every model in the fallback chain refused).
+    """
+    stop_reason = response_json.get("stop_reason")
+    if stop_reason == "max_tokens":
+        logger.warning(
+            f"Anthropic response for model {model_name} was truncated by max_tokens; "
+            "output may be incomplete/invalid JSON."
+        )
+    elif stop_reason == "refusal":
+        stop_details = response_json.get("stop_details") or {}
+        category = stop_details.get("category")
+        explanation = stop_details.get("explanation")
+        logger.warning(
+            f"Anthropic model {model_name} declined the request (stop_reason=refusal, "
+            f"category={category}): {explanation}"
+        )
+        return (
+            "This section could not be generated because the request was declined "
+            "by the model's safety classifier"
+            + (f" (category: {category})" if category else "")
+            + ". Try regenerating, or switch to a different model."
+        )
+    return None
+
 
 class ModelProvider:
     """Base class for model providers."""
@@ -145,15 +225,15 @@ class OllamaProvider(ModelProvider):
                 models_response = self.ollama.list()
                 # Handle new Ollama API response format which has a 'models' list of Model objects
                 if hasattr(models_response, 'models') and isinstance(models_response.models, list):
-                    available_models = [m.model for m in models_response.models]
+                    available_models = [m.model for m in models_response.models if m.model is not None]
                 else:
                     # Fallback for older API versions or different response format
-                    available_models = [model.get('name') for model in models_response.get('models', [])]
+                    available_models = [n for model in models_response.get('models', []) if (n := model.get('name')) is not None]
             else:
                 # Use direct HTTP request as fallback
                 response = requests.get(f"{self.endpoint}/api/tags")
                 response.raise_for_status()
-                available_models = [model.get('name') for model in response.json().get('models', [])]
+                available_models = [n for model in response.json().get('models', []) if (n := model.get('name')) is not None]
             
             logger.info(f"Available Ollama models: {available_models}")
             return available_models
@@ -165,7 +245,7 @@ class OllamaProvider(ModelProvider):
 class AnthropicProvider(ModelProvider):
     """Provider for Anthropic Claude models."""
 
-    def __init__(self, model_name: str = None, api_key: Optional[str] = None):
+    def __init__(self, model_name: Optional[str] = None, api_key: Optional[str] = None):
         """
         Initialize the Anthropic provider.
 
@@ -226,49 +306,45 @@ class AnthropicProvider(ModelProvider):
         
         try:
             logger.info(f"Using Anthropic model: {self.model_name}")
-            
-            if self.client:
-                # Use the Anthropic package if available
-                message = self.client.messages.create(
-                    model=self.model_name,
-                    system=system_message,
-                    messages=[
-                        {"role": "user", "content": user_message}
-                    ],
-                    max_tokens=4000
-                )
-                result = message.content[0].text
-            else:
-                # Use direct HTTP request
-                headers = {
-                    "x-api-key": self.api_key,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json"
-                }
-                
-                # Add more debugging
-                logger.info(f"Using Anthropic model '{self.model_name}' via direct HTTP request")
-                logger.info(f"API key starts with: {self.api_key[:8]}...")
-                
-                data = {
-                    "model": self.model_name,
-                    "system": system_message,
-                    "messages": [
-                        {"role": "user", "content": user_message}
-                    ],
-                    "max_tokens": 4000
-                }
-                
-                response = requests.post(
-                    "https://api.anthropic.com/v1/messages",
-                    headers=headers,
-                    json=data
-                )
-                response.raise_for_status()
-                result = response.json()["content"][0]["text"]
-            
+
+            headers = {
+                "x-api-key": self.api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            }
+            logger.info(f"Using Anthropic model '{self.model_name}' via direct HTTP request")
+            logger.info(f"API key starts with: {self.api_key[:8]}...")
+            extras = _anthropic_request_extras(self.model_name)
+            headers.update(extras["headers"])
+            data = {
+                "model": self.model_name,
+                "system": system_message,
+                "messages": [
+                    {"role": "user", "content": user_message}
+                ],
+                # max_tokens is a hard cap on thinking + response text combined
+                # (adaptive thinking is on by default on Sonnet 5 / Opus 4.8+),
+                # so this needs real headroom beyond the visible text length.
+                "max_tokens": 8000,
+                "output_config": {"effort": "medium"},
+                **extras["body"]
+            }
+            response = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers=headers,
+                json=data
+            )
+            response.raise_for_status()
+            response_json = response.json()
+            error_message = _check_response_for_issues(response_json, self.model_name)
+            if error_message:
+                return _narrative_error_json("Model Declined Request", error_message)
+            content = response_json["content"]
+            text_blocks = [b for b in content if b.get("type") == "text"]
+            result = text_blocks[0]["text"] if text_blocks else ""
+
             return result
-        
+
         except Exception as e:
             logger.error(f"Error using Anthropic API: {str(e)}")
             # Return a JSON error response
@@ -322,13 +398,19 @@ class AnthropicProvider(ModelProvider):
             }
             
             # Format requests for Batch API
+            # Note: the server-side "fallbacks" param (used for claude-fable-5
+            # refusal recovery elsewhere in this file) is rejected by the Batch
+            # API and must not be added here — a refused batch item just comes
+            # back with stop_reason "refusal" and needs to be resubmitted
+            # separately via the non-batch path.
             formatted_requests = []
             for i, request in enumerate(batch_requests):
                 req = {
                     "model": self.model_name,
                     "system": request.get("system", ""),
                     "messages": request.get("messages", []),
-                    "max_tokens": request.get("max_tokens", 4000)
+                    "max_tokens": request.get("max_tokens", 8000),
+                    "output_config": {"effort": "medium"}
                 }
                 
                 # Add request ID (for correlation on response)
@@ -367,7 +449,7 @@ class AnthropicProvider(ModelProvider):
                 return response_data
                 
             except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 404:
+                if e.response is not None and e.response.status_code == 404:
                     logger.warning("Anthropic Batch API endpoint not found (404). Falling back to sequential processing.")
                     return {"error": "Batch API not available", "fallback": "sequential"}
                 else:
@@ -391,14 +473,15 @@ class AnthropicProvider(ModelProvider):
         """
         # Anthropic doesn't have a list models endpoint, so we hardcode the known models
         available_models = [
-            "claude-3-5-sonnet-20241022",
-            "claude-3-7-sonnet-20250219",
-            "claude-opus-4-20250514"
+            "claude-fable-5",
+            "claude-sonnet-5",
+            "claude-opus-4-8",
+            "claude-sonnet-4-6",
         ]
         logger.info(f"Available Anthropic models: {available_models}")
         return available_models
 
-    async def get_completion(self, system: str, prompt: str, max_tokens: int = 4000) -> Dict[str, Any]:
+    async def get_completion(self, system: str, prompt: str, max_tokens: int = 8000) -> Dict[str, Any]:
         """
         Get a completion from the Anthropic API with the new completion format.
         This method is specifically for the batch report generator.
@@ -444,13 +527,19 @@ class AnthropicProvider(ModelProvider):
                 "content-type": "application/json"
             }
 
+            extras = _anthropic_request_extras(self.model_name)
+            headers.update(extras["headers"])
             data = {
                 "model": self.model_name,
                 "system": system,
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],
-                "max_tokens": max_tokens
+                # max_tokens is a hard cap on thinking + response text combined
+                # (adaptive thinking is on by default on Sonnet 5 / Opus 4.8+).
+                "max_tokens": max_tokens,
+                "output_config": {"effort": "medium"},
+                **extras["body"]
             }
 
             response = requests.post(
@@ -462,9 +551,14 @@ class AnthropicProvider(ModelProvider):
             # Raise for HTTP errors
             response.raise_for_status()
 
-            # Parse response
+            # Parse response — filter by type to skip thinking blocks (Sonnet 5+)
             response_data = response.json()
-            result = response_data["content"][0]["text"]
+            error_message = _check_response_for_issues(response_data, self.model_name)
+            if error_message:
+                return {"content": _narrative_error_json("Model Declined Request", error_message)}
+            content = response_data["content"]
+            text_blocks = [b for b in content if b.get("type") == "text"]
+            result = text_blocks[0]["text"] if text_blocks else ""
 
             return {"content": result}
 
@@ -491,7 +585,7 @@ class AnthropicProvider(ModelProvider):
                 ]
             })}
 
-def get_model_provider(provider_type: str = None, model_name: str = None) -> ModelProvider:
+def get_model_provider(provider_type: Optional[str] = None, model_name: Optional[str] = None) -> ModelProvider:
     """
     Factory function to get the appropriate model provider.
     
@@ -504,7 +598,10 @@ def get_model_provider(provider_type: str = None, model_name: str = None) -> Mod
     """
     # Check for environment variable configuration
     provider_type = provider_type or os.environ.get("LLM_PROVIDER")
-    
+
+    if not provider_type:
+        raise ValueError("provider_type must be specified or LLM_PROVIDER environment variable must be set")
+
     if provider_type.lower() == "anthropic":
         model_name = model_name or os.environ.get("ANTHROPIC_MODEL")
         if not model_name:
