@@ -101,6 +101,7 @@ services:
 
   nginx-proxy:
     container_name: nginx-proxy
+    restart: unless-stopped
     build:
       context: ./file-server
       dockerfile: nginx.Dockerfile
@@ -117,6 +118,7 @@ services:
 
   file-server:
     container_name: file-server
+    restart: unless-stopped
     build:
       context: ./
       dockerfile: file-server/Dockerfile
