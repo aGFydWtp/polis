@@ -132,25 +132,32 @@ export class PolisMinimalStack extends cdk.Stack {
       'mkdir -p /opt/polis && cd /opt/polis',
       `[ -d polis ] || git clone --depth 1 -b ${gitBranch} https://github.com/aGFydWtp/polis.git polis`,
       'cd /opt/polis/polis',
-      `aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > .env`,
-      'if ! grep -q "^DATABASE_URL=" .env; then echo "ERROR: DATABASE_URL missing in env parameter"; exit 1; fi',
+      // .env は tmp に書いてから mv（取得失敗時に既存 .env を空に破壊しないため）
+      'umask 077',
+      `aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > .env.tmp`,
+      'if ! grep -q "^DATABASE_URL=" .env.tmp; then echo "ERROR: DATABASE_URL missing in env parameter"; exit 1; fi',
+      'mv .env.tmp .env',
       'docker compose -f docker-compose.prod.yml up -d --build',
       // --- systemd サービス: EC2 再起動時に docker compose up -d を自動実行 ---
       // EventBridge Scheduler は EC2 起動のみ行うため、コンテナはサービスとして自動再起動させる
+      // Wants= がないと network-online.target は起動されず After= だけでは何も待たない。
+      // さらにブート直後の SSM 取得失敗に備えてリトライし、tmp 経由で .env を原子的に更新する
+      // （リダイレクトによる truncate で既存 .env を空に破壊しないため）。
       `cat > /etc/systemd/system/polis.service << 'UNIT'
 [Unit]
 Description=Polis docker-compose
 After=docker.service network-online.target
+Wants=network-online.target
 Requires=docker.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/polis/polis
-ExecStartPre=/bin/bash -c 'aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > /opt/polis/polis/.env'
+ExecStartPre=/bin/bash -c 'umask 077; for i in $(seq 1 30); do aws ssm get-parameter --name ${envParamName} --with-decryption --query Parameter.Value --output text --region ${this.region} > /opt/polis/polis/.env.tmp && break; echo "env fetch attempt $i failed; retrying"; sleep 10; done; grep -q "^DATABASE_URL=" /opt/polis/polis/.env.tmp && mv /opt/polis/polis/.env.tmp /opt/polis/polis/.env'
 ExecStart=/usr/local/lib/docker/cli-plugins/docker-compose -f docker-compose.prod.yml up -d
 ExecStop=/usr/local/lib/docker/cli-plugins/docker-compose -f docker-compose.prod.yml stop
-TimeoutStartSec=300
+TimeoutStartSec=600
 
 [Install]
 WantedBy=multi-user.target
