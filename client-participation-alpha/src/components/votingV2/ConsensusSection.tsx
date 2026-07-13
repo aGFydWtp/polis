@@ -264,9 +264,16 @@ interface ConsensusSectionProps {
   s: Translations
   items: ConsensusStatement[]
   variant: 'desktop' | 'mobile'
+  /** Cards per row; 2 while the desktop vote card is closed and width allows. */
+  columns?: 1 | 2
 }
 
-export default function ConsensusSection({ s, items, variant }: ConsensusSectionProps) {
+export default function ConsensusSection({
+  s,
+  items,
+  variant,
+  columns = 1
+}: ConsensusSectionProps) {
   if (items.length === 0) return null
   const size = SIZES[variant]
 
@@ -276,9 +283,17 @@ export default function ConsensusSection({ s, items, variant }: ConsensusSection
       <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 4 }}>
         {s.v2ConsensusSubtitle}
       </div>
-      {items.map((item) => (
-        <ConsensusCard key={item.tid} s={s} item={item} size={size} />
-      ))}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          columnGap: 20
+        }}
+      >
+        {items.map((item) => (
+          <ConsensusCard key={item.tid} s={s} item={item} size={size} />
+        ))}
+      </div>
     </div>
   )
 }

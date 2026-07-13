@@ -185,9 +185,9 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             maxWidth: STAGE_MAX,
             width: '100%',
             margin: '0 auto',
-            // Tall enough that the collapsed vote card (bottom ≈ 148px) sits within
-            // the header, so full-width content below never collides with it.
-            minHeight: 135,
+            // Together with the content's 28px top padding this keeps the first
+            // content row below the collapsed vote card (bottom ≈ 148px).
+            minHeight: 120,
             padding: '18px 0 18px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -207,19 +207,6 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
               {s.v2HeroTagline}
             </div>
             <div style={{ fontSize: 32, fontWeight: 700, lineHeight: 1.3 }}>{topic}</div>
-            {description && (
-              <div
-                style={{
-                  fontSize: 16,
-                  lineHeight: 1.6,
-                  color: '#c3ccdd',
-                  marginTop: 6,
-                  whiteSpace: 'pre-line'
-                }}
-              >
-                {description}
-              </div>
-            )}
           </div>
           {/* reserve the right column so the floating vote panel (which bleeds
               up through the header) never overlaps the title/description. */}
@@ -227,15 +214,16 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
         </div>
       </div>
 
-      {/* main split — content constrained to the 900px band, centered */}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+      {/* main split — full-width scroller so the scrollbar hugs the viewport edge;
+          the content band stays centered inside it */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {/* left: reference groups */}
         <div
           style={{
             width: '100%',
             maxWidth: STAGE_MAX,
             minWidth: 0,
-            overflow: 'auto',
+            margin: '0 auto',
             padding: '28px 32px',
             // Reserve the card gutter only while it is open; reclaim full width when
             // collapsed. Transitions in step with the card's grow/shrink.
@@ -243,6 +231,21 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             transition: 'padding-right .32s cubic-bezier(.4, 0, .2, 1)'
           }}
         >
+          {/* conversation description — scrolls with the content so a long text
+              doesn't inflate the fixed header */}
+          {description && (
+            <div
+              style={{
+                fontSize: 16,
+                lineHeight: 1.7,
+                color: '#5a6272',
+                whiteSpace: 'pre-line',
+                marginBottom: 24
+              }}
+            >
+              {description}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
             <span
@@ -348,8 +351,14 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
             )}
           </div>
 
-          {/* みんなの共通意見 — cross-group consensus donut cards (6d) */}
-          <ConsensusSection s={s} items={vm.consensusItems} variant="desktop" />
+          {/* みんなの共通意見 — cross-group consensus donut cards (6d);
+              two-up while the vote card is closed and the band is full width */}
+          <ConsensusSection
+            s={s}
+            items={vm.consensusItems}
+            variant="desktop"
+            columns={vm.sheetOpen ? 1 : 2}
+          />
         </div>
 
         {/* right: floating vote panel (5a — breaks up through the header) */}
