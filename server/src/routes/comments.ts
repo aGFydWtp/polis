@@ -104,6 +104,67 @@ async function commentExists(zid: number, txt: string): Promise<boolean> {
   return Array.isArray(rows) && rows.length > 0;
 }
 
+// Matches the magic key in the tid_auto / tid_auto_unlock triggers (migrations).
+const TID_AUTO_MAGIC_ID = 873791984;
+
+/**
+ * Insert a comment, retrying TID collisions (same race as addParticipant in
+ * participant.ts): the tid_auto trigger computes MAX(tid)+1 under a
+ * session-level advisory lock that is released by an AFTER INSERT trigger,
+ * but a concurrent INSERT can compute the same tid before the first one
+ * commits, failing on comments_zid_tid_key.
+ *
+ * Runs on a dedicated client so the stale advisory lock from a failed INSERT
+ * (the AFTER trigger never fires) can be released on this same session before
+ * retrying, and is never returned to the pool still held.
+ */
+async function insertCommentWithTidRetry(
+  insertSql: string,
+  params: any[],
+  zid: number
+): Promise<any[]> {
+  const MAX_TID_RETRIES = 5;
+  const client = await pg.connect();
+  try {
+    let attempt = 0;
+    while (true) {
+      try {
+        const result = await client.query(insertSql, params);
+        return result.rows;
+      } catch (insertErr: any) {
+        if (
+          insertErr.code === "23505" &&
+          insertErr.constraint === "comments_zid_tid_key" &&
+          attempt < MAX_TID_RETRIES - 1
+        ) {
+          attempt++;
+          logger.warn("TID collision on comment insert, retrying", {
+            zid,
+            attempt,
+          });
+          await client.query("SELECT pg_advisory_unlock($1, $2);", [
+            TID_AUTO_MAGIC_ID,
+            zid,
+          ]);
+          await new Promise((r) => setTimeout(r, 10 * attempt));
+          continue;
+        }
+        throw insertErr;
+      }
+    }
+  } finally {
+    // A failed INSERT (e.g. duplicate txt) leaves tid_auto's session-level
+    // advisory lock held; releasing here keeps it from leaking into the pool
+    // and blocking every later comment INSERT for this zid.
+    try {
+      await client.query("SELECT pg_advisory_unlock_all();");
+    } catch (unlockErr) {
+      logger.error("polis_err_advisory_unlock_all", unlockErr);
+    }
+    client.release();
+  }
+}
+
 async function handle_GET_comments_translations(
   req: { p: { zid: number; tid: number; lang: string } },
   res: { status: (code: number) => { json: (data: unknown) => void } }
@@ -481,7 +542,7 @@ async function handle_POST_comments(req: RequestWithP, res: any) {
     const lang_confidence = detection.confidence;
 
     // 6. Insert the comment
-    const insertedComment = await pg.queryP(
+    const insertedComment = await insertCommentWithTidRetry(
       `INSERT INTO COMMENTS
       (pid, zid, txt, velocity, active, mod, uid, anon, is_seed, created, tid, lang, lang_confidence)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, default, null, $10, $11)
@@ -498,7 +559,8 @@ async function handle_POST_comments(req: RequestWithP, res: any) {
         is_seed || false,
         lang,
         lang_confidence,
-      ]
+      ],
+      zid
     );
 
     const comment = insertedComment[0];
@@ -907,7 +969,7 @@ async function handle_POST_comments_bulk(
         const lang = detection.language;
         const lang_confidence = detection.confidence;
 
-        const insertedComment: any = await pg.queryP(
+        const insertedComment: any = await insertCommentWithTidRetry(
           `INSERT INTO COMMENTS
           (pid, zid, txt, velocity, active, mod, uid, anon, is_seed, created, tid, lang, lang_confidence, original_id)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, default, null, $10, $11, $12)
@@ -925,7 +987,8 @@ async function handle_POST_comments_bulk(
             lang,
             lang_confidence,
             original_id,
-          ]
+          ],
+          zid!
         );
 
         const comment = insertedComment[0];
