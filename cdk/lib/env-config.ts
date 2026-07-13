@@ -1,11 +1,16 @@
 /**
  * 環境別設定の zod スキーマとローダ。
  *
- * 実値は cdk.json の context.{dev,stg,prd} に置き、OS 環境変数 ENVIRONMENT で切り替える。
+ * cdk.json の context.{dev,stg,prd} はプレースホルダのテンプレート。
+ * 実値は git 管理外の cdk/cdk.local.json（{"dev": {...}} 形式）に置き、
+ * 読込時に context の値へシャローマージで上書きする。
+ * OS 環境変数 ENVIRONMENT で環境を切り替える。
  *   ENVIRONMENT=dev npx cdk deploy PolisMinimalStack-dev
  *
  * 環境定数 (ENVIRONMENTS / resolveEnvironment など) は ./common に分離。
  */
+import * as fs from 'fs';
+import * as path from 'path';
 import { Node } from 'constructs';
 import { z } from 'zod';
 import { Environment } from './common';
@@ -46,9 +51,44 @@ export const PolisEnvValuesSchema = z.object({
 
 export type PolisEnvValues = z.infer<typeof PolisEnvValuesSchema>;
 
+/** git 管理外のローカル設定ファイル（cdk/ 直下。lib/ からの相対で解決） */
+const LOCAL_CONFIG_PATH = path.resolve(__dirname, '..', 'cdk.local.json');
+
 /**
- * cdk.json の context.{env} を読み込み、zod で検証して返す。
- * 値は app.node 経由の CDK context から取得する（--context / cdk.context.json で上書き可）。
+ * cdk.local.json（存在すれば）から指定環境のオーバーライド値を読み込む。
+ * - ファイルが無い / 環境キーが無い場合は undefined（cdk.json の値のみで動作）。
+ * - JSON パース失敗時は分かりやすいエラーで落とす。
+ */
+function loadLocalOverrides(environment: Environment): Record<string, unknown> | undefined {
+  if (!fs.existsSync(LOCAL_CONFIG_PATH)) {
+    return undefined;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(LOCAL_CONFIG_PATH, 'utf8'));
+  } catch (e) {
+    throw new Error(
+      `Failed to parse ${LOCAL_CONFIG_PATH}: ${e instanceof Error ? e.message : String(e)}`,
+    );
+  }
+  if (parsed === null || typeof parsed !== 'object') {
+    throw new Error(`${LOCAL_CONFIG_PATH} must contain a JSON object keyed by environment name`);
+  }
+  const overrides = (parsed as Record<string, unknown>)[environment];
+  if (overrides === undefined) {
+    return undefined;
+  }
+  if (overrides === null || typeof overrides !== 'object' || Array.isArray(overrides)) {
+    throw new Error(`${LOCAL_CONFIG_PATH}: "${environment}" must be a JSON object`);
+  }
+  return overrides as Record<string, unknown>;
+}
+
+/**
+ * 環境別設定を読み込み、zod で検証して返す。
+ * 1. cdk.json の context.{env} を app.node 経由の CDK context から取得
+ *    （--context / cdk.context.json で上書き可）。
+ * 2. git 管理外の cdk.local.json に同じ環境キーがあれば、その値をシャローマージで上書き。
  * スキーマ不一致・未定義時は詳細なエラーで落とす。
  */
 export function loadEnvValues(node: Node, environment: Environment): PolisEnvValues {
@@ -56,7 +96,9 @@ export function loadEnvValues(node: Node, environment: Environment): PolisEnvVal
   if (raw === undefined) {
     throw new Error(`env config not found in cdk.json context: "${environment}"`);
   }
-  const result = PolisEnvValuesSchema.safeParse(raw);
+  const overrides = loadLocalOverrides(environment);
+  const merged = overrides === undefined ? raw : { ...raw, ...overrides };
+  const result = PolisEnvValuesSchema.safeParse(merged);
   if (!result.success) {
     throw new Error(
       `Invalid env config (context.${environment}):\n${JSON.stringify(z.treeifyError(result.error), null, 2)}`,

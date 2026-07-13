@@ -70,10 +70,28 @@ npm install
 
 ---
 
-## 4. `cdk.json` の context を設定
+## 4. 環境別設定を `cdk.local.json` に記入
 
-`cdk/cdk.json` の `context.<env>`（例: `context.dev`）に既存リソースの実値を記入します。
-スキーマは [lib/env-config.ts](lib/env-config.ts) の zod で検証され、不足・型不一致時は詳細エラーで停止します。
+`cdk/cdk.json` の `context.<env>`（例: `context.dev`）は**プレースホルダのテンプレート**です
+（このリポジトリは公開されるため、実値はコミットしません）。
+
+実際の AWS アカウント ID・VPC/サブネット ID・ALB ARN などの**実値**は、git 管理外の
+`cdk/cdk.local.json` に環境名をトップレベルキーとして記入します:
+
+```json
+{
+  "dev": {
+    "account": "123456789012",
+    "region": "ap-northeast-1",
+    "vpcId": "vpc-...",
+    "...": "..."
+  }
+}
+```
+
+読込時に [lib/env-config.ts](lib/env-config.ts) が `cdk.json` の `context.<env>` の値へ
+`cdk.local.json` の同じ環境キーの値をシャローマージで上書きします（`cdk.local.json` が無い場合は
+`cdk.json` の値のみで動作）。マージ後の値は zod で検証され、不足・型不一致時は詳細エラーで停止します。
 
 | キー | 説明 |
 | --- | --- |
@@ -102,15 +120,15 @@ npm install
 
 ## 5. データスタックを先にデプロイ → volumeId を転記
 
-postgres データ用 EBS を作成し、出力された volumeId を `cdk.json` に転記します。
+postgres データ用 EBS を作成し、出力された volumeId を `cdk.local.json` に転記します。
 
 ```bash
 cd cdk
 ENVIRONMENT=dev npx cdk deploy PolisDataStack-dev
 ```
 
-デプロイ後、出力 `PolisDataVolumeId`（例: `vol-0123...`）を `cdk.json` の
-`context.dev.ebsVolumeId` に転記します。`PolisDataVolumeAz` が EC2 配置 AZ と一致していることも確認してください（同一 AZ 必須）。
+デプロイ後、出力 `PolisDataVolumeId`（例: `vol-0123...`）を `cdk.local.json` の
+`dev.ebsVolumeId` に転記します。`PolisDataVolumeAz` が EC2 配置 AZ と一致していることも確認してください（同一 AZ 必須）。
 
 > このスタックは `RETAIN` のため、以後アプリ層を destroy してもこのボリューム＝データは消えません。
 
@@ -193,7 +211,7 @@ ENVIRONMENT=dev npx cdk destroy PolisDataStack-dev
 
 | 症状 | 確認ポイント |
 | --- | --- |
-| `env config not found` / `Invalid env config` | `cdk.json` の `context.<env>` が未設定・型不一致。エラー本文の zod ツリーを確認 |
+| `env config not found` / `Invalid env config` | `cdk.local.json` の `<env>` キー（または `cdk.json` の `context.<env>`）が未設定・型不一致。エラー本文の zod ツリーを確認 |
 | EC2 起動後すぐ停止 / アプリが上がらない | env パラメータに `DATABASE_URL=` が無い / ロールの `kms:Decrypt` 不足で復号失敗。SSM で `/var/log/cloud-init-output.log` を確認 |
 | ヘルスチェック unhealthy | コンテナ起動完了前 / `appPort` 不一致 / SG が ALB SG からの inbound を許可しているか |
 | データ EBS が見つからない | `ebsVolumeId` の AZ と EC2 の AZ（`availabilityZones[0]`）が一致しているか |

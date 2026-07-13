@@ -6,3 +6,6 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# 環境別設定の実値（git 管理外。lib/env-config.ts が読み込む）
+cdk.local.json
