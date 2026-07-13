@@ -259,6 +259,16 @@ async function addParticipant(zid: number, uid?: number): Promise<any> {
     }
     throw err;
   } finally {
+    // pid_auto's advisory lock is session-level: it survives ROLLBACK, and a
+    // failed INSERT never fires the pid_auto_unlock AFTER trigger. Any exit
+    // path other than a successful INSERT (uid-conflict fetch, exhausted
+    // retries, unexpected errors) would return this connection to the pool
+    // still holding the lock, blocking every later join for the same zid.
+    try {
+      await client.query("SELECT pg_advisory_unlock_all();");
+    } catch (unlockErr) {
+      logger.error("polis_err_advisory_unlock_all", unlockErr);
+    }
     client.release();
   }
 }
