@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import type { PCAData } from '../../api/types'
 import { CONCAVITY, LENGTH_THRESHOLD, xMax, yMax } from './constants'
 import type { BaseCluster, GroupVoteInfo, Hull, StatementWithType, UserPosition } from './types'
-import { selectTopConsensusItems } from './utils'
+import { selectTopConsensusItems, toVoteCounts } from './utils'
 
 /**
  * Calculate concave hull for a set of points.
@@ -212,12 +212,12 @@ export function useVisualizationData(
       const groupId = parseInt(groupIdStr, 10)
       const votes = groupVotes.votes[tidString]
       if (votes) {
-        const total = votes.A + votes.D + votes.S
+        const { agree, disagree, pass, total } = toVoteCounts(votes)
         voteData.push({
           groupId,
-          agree: votes.A,
-          disagree: votes.D,
-          skip: votes.S,
+          agree,
+          disagree,
+          skip: pass,
           total
         })
       }

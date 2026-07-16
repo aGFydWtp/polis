@@ -1,6 +1,68 @@
-import { selectTopConsensusItems } from '../utils'
+import type { GroupVotes } from '../../../api/types'
+import { aggregateGroupVotesForTid, selectTopConsensusItems, toVoteCounts } from '../utils'
 
 describe('visualization utils', () => {
+  describe('toVoteCounts', () => {
+    it('treats S as the total voter count and derives pass as S - A - D', () => {
+      const counts = toVoteCounts({ A: 5, D: 3, S: 10 })
+
+      expect(counts).toEqual({ agree: 5, disagree: 3, pass: 2, total: 10 })
+    })
+
+    it('returns zero pass when everyone agreed or disagreed', () => {
+      const counts = toVoteCounts({ A: 7, D: 3, S: 10 })
+
+      expect(counts.pass).toBe(0)
+      expect(counts.total).toBe(10)
+    })
+
+    it('clamps pass at zero for inconsistent input', () => {
+      const counts = toVoteCounts({ A: 8, D: 4, S: 10 })
+
+      expect(counts.pass).toBe(0)
+    })
+  })
+
+  describe('aggregateGroupVotesForTid', () => {
+    const groupVotes: { [groupId: string]: GroupVotes } = {
+      '0': { 'n-members': 12, votes: { '42': { A: 6, D: 2, S: 9 } } },
+      '1': { 'n-members': 8, votes: { '42': { A: 3, D: 4, S: 7 } } }
+    }
+
+    it('sums A, D, and S across groups and derives pass from the totals', () => {
+      const counts = aggregateGroupVotesForTid(groupVotes, '42')
+
+      // A = 6+3, D = 2+4, S (total voters) = 9+7, pass = 16 - 9 - 6
+      expect(counts).toEqual({ agree: 9, disagree: 6, pass: 1, total: 16 })
+    })
+
+    it('produces percentages that reflect S as total, not as pass count', () => {
+      const { agree, disagree, pass, total } = aggregateGroupVotesForTid(groupVotes, '42')
+
+      // The old S-as-pass bug rendered 29%/19%/52% for these counts.
+      expect(Math.round((agree / total) * 100)).toBe(56)
+      expect(Math.round((disagree / total) * 100)).toBe(38)
+      expect(Math.round((pass / total) * 100)).toBe(6)
+    })
+
+    it('skips groups that have no entry for the tid', () => {
+      const sparse: { [groupId: string]: GroupVotes } = {
+        '0': { 'n-members': 5, votes: { '42': { A: 2, D: 1, S: 4 } } },
+        '1': { 'n-members': 3, votes: {} }
+      }
+
+      const counts = aggregateGroupVotesForTid(sparse, '42')
+
+      expect(counts).toEqual({ agree: 2, disagree: 1, pass: 1, total: 4 })
+    })
+
+    it('returns zeros when no group voted on the tid', () => {
+      const counts = aggregateGroupVotesForTid(groupVotes, '999')
+
+      expect(counts).toEqual({ agree: 0, disagree: 0, pass: 0, total: 0 })
+    })
+  })
+
   describe('selectTopConsensusItems', () => {
     it('should select top items up to target count', () => {
       const data = {

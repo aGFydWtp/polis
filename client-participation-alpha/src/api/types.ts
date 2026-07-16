@@ -37,7 +37,7 @@ export interface GroupVotes {
     [tid: string]: {
       A: number // Agree
       D: number // Disagree
-      S: number // Skip
+      S: number // Saw — total members who voted on the comment (agree + disagree + pass)
     }
   }
 }

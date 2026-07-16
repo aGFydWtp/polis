@@ -9,7 +9,7 @@ import type { StatementData, VoteData } from '../types'
 import { groupLetters, REFRESH_DELAY_MS } from '../visualization/constants'
 import type { SelectedStatement, StatementContext, StatementWithType } from '../visualization/types'
 import { useVisualizationData } from '../visualization/useVisualizationData'
-import { selectTopConsensusItems } from '../visualization/utils'
+import { aggregateGroupVotesForTid, selectTopConsensusItems } from '../visualization/utils'
 
 /**
  * Vote values (raw sign, matching the server / Survey.tsx convention):
@@ -303,18 +303,7 @@ export function useVotingScreen({
       const comment = comments.find((c) => c.tid === tid)
       if (!comment) return
 
-      let agree = 0
-      let disagree = 0
-      let pass = 0
-      Object.values(groupVotes).forEach((g) => {
-        const votes = g.votes[tidStr]
-        if (votes) {
-          agree += votes.A
-          disagree += votes.D
-          pass += votes.S
-        }
-      })
-      const total = agree + disagree + pass
+      const { agree, disagree, pass, total } = aggregateGroupVotesForTid(groupVotes, tidStr)
       if (total === 0) return
 
       items.push({

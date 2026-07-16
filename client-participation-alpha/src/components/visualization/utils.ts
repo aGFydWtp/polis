@@ -1,3 +1,46 @@
+import type { GroupVotes } from '../../api/types'
+
+export interface VoteCounts {
+  agree: number
+  disagree: number
+  pass: number
+  /** Total members who voted on the statement (agree + disagree + pass). */
+  total: number
+}
+
+/**
+ * Converts a raw math-service vote entry into explicit counts.
+ * In the group-votes structure, S ("saw") is the TOTAL number of members who
+ * voted on the comment — not the pass count. The pass count is S - A - D.
+ */
+export function toVoteCounts(votes: { A: number; D: number; S: number }): VoteCounts {
+  const agree = votes.A
+  const disagree = votes.D
+  const total = votes.S
+  return { agree, disagree, pass: Math.max(0, total - agree - disagree), total }
+}
+
+/**
+ * Aggregates a statement's vote counts across all groups.
+ */
+export function aggregateGroupVotesForTid(
+  groupVotes: { [groupId: string]: GroupVotes },
+  tid: string
+): VoteCounts {
+  let agree = 0
+  let disagree = 0
+  let total = 0
+  Object.values(groupVotes).forEach((g) => {
+    const votes = g.votes[tid]
+    if (votes) {
+      agree += votes.A
+      disagree += votes.D
+      total += votes.S
+    }
+  })
+  return { agree, disagree, pass: Math.max(0, total - agree - disagree), total }
+}
+
 /**
  * Helper function to select top consensus items
  * Handles items with tied scores by including all tied items, up to a tolerance

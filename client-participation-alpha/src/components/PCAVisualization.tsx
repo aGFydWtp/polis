@@ -6,6 +6,7 @@ import type { Comment, PCAData } from '../api/types'
 import { getConversationToken } from '../lib/auth'
 import { concaveHull } from '../utils/concaveHull'
 import GroupIcon from './icons/GroupIcon'
+import { toVoteCounts } from './visualization/utils'
 
 interface BaseCluster {
   id: number
@@ -201,12 +202,12 @@ export default function PCAVisualization({
       const groupId = parseInt(groupIdStr, 10)
       const votes = groupVotes.votes[tidString]
       if (votes) {
-        const total = votes.A + votes.D + votes.S
+        const { agree, disagree, pass, total } = toVoteCounts(votes)
         voteData.push({
           groupId,
-          agree: votes.A,
-          disagree: votes.D,
-          skip: votes.S,
+          agree,
+          disagree,
+          skip: pass,
           total
         })
       }
