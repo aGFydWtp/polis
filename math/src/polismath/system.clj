@@ -50,12 +50,12 @@
 
 (defn full-system
   [config-overrides]
+  ;; The task-poller is required here so that worker_tasks entries (update_math recomputes from
+  ;; the server, report/export generation) are actually processed when running the `full` command,
+  ;; which is what the deployed math container runs (see bin/run).
   (merge
-    (poller-system config-overrides)))
-    ;; This is a little silly to do this here, since we can just change the commands that get called to only
-    ;; run the poller system, but this is more expedient for the moment, and trying to get things smoothed out
-    ;; for developer meetup tomorrow :grimacing:
-    ;(task-system config-overrides)))
+    (poller-system config-overrides)
+    (task-system config-overrides)))
 
 (defn onyx-system
   "Creates a base-system and assocs in polismath onyx worker related components."

@@ -295,7 +295,8 @@ services:
 
   # SQS
   localstack:
-    image: localstack/localstack
+    # 2026.x 以降はライセンストークン必須になったため、無料で使える最終版に固定
+    image: localstack/localstack:4.14.0
     ports:
       - "4566:4566"
     environment:

@@ -44,7 +44,7 @@ export async function processImportJob(payload: {
   try {
     await pg.queryP(
       "UPDATE byod_import_jobs SET status = 'processing', updated_at = NOW() WHERE id = $1",
-      [jobId]
+      [jobId],
     );
 
     logger.info(`[Worker] Building Comment ID Map for ZID ${zid}...`);
@@ -69,7 +69,7 @@ export async function processImportJob(payload: {
           columns: true,
           trim: true,
           skip_empty_lines: true,
-        })
+        }),
       );
 
       parser
@@ -122,10 +122,10 @@ export async function processImportJob(payload: {
 
     await pg.queryP(
       "UPDATE byod_import_jobs SET status = 'completed', stage = 'finished', updated_at = NOW() WHERE id = $1",
-      [jobId]
+      [jobId],
     );
     logger.info(
-      `[Worker] Job ${jobId} Completed. Processed ${processedCount} rows.`
+      `[Worker] Job ${jobId} Completed. Processed ${processedCount} rows.`,
     );
 
     try {
@@ -134,7 +134,7 @@ export async function processImportJob(payload: {
         new DeleteObjectCommand({
           Bucket: Config.AWS_S3_BUCKET_NAME || "polis-delphi",
           Key: s3Key,
-        })
+        }),
       );
       logger.info(`[Worker] S3 Object Deleted.`);
     } catch (s3Err) {
@@ -147,7 +147,7 @@ export async function processImportJob(payload: {
           Config.polisFromAddress,
           email,
           "Import Successful: Your Data is Ready",
-          `Your import for conversation ${zid} has completed successfully.\n\nProcessed ${processedCount} votes.`
+          `Your import for conversation ${zid} has completed successfully.\n\nProcessed ${processedCount} votes.`,
         );
       } catch (emailErr) {
         logger.error(`[Worker] Failed to send success email`, emailErr);
@@ -157,7 +157,7 @@ export async function processImportJob(payload: {
     logger.error(`[Worker] Job ${jobId} Failed`, err);
     await markJobAsFailedInDb(
       jobId,
-      err instanceof Error ? err.message : "Unknown Error"
+      err instanceof Error ? err.message : "Unknown Error",
     );
     if (email) {
       try {
@@ -166,7 +166,7 @@ export async function processImportJob(payload: {
           Config.polisFromAddress,
           email,
           "Import Failed: Something went wrong",
-          `Your import for conversation ${zid} failed.\n\nError: ${err?.message}`
+          `Your import for conversation ${zid} failed.\n\nError: ${err?.message}`,
         );
       } catch (emailErr) {
         logger.error(`[Worker] Failed to send failure email`, emailErr);
@@ -187,7 +187,7 @@ async function markJobAsFailedInDb(jobId: number, errorMessage: string) {
   } catch (dbErr) {
     const msg = dbErr instanceof Error ? dbErr.message : "Unknown DB Error";
     logger.error(
-      `CRITICAL DOUBLE FAULT: Failed to mark job ${jobId} as failed. Original error: ${errorMessage}. DB Error: ${msg}`
+      `CRITICAL DOUBLE FAULT: Failed to mark job ${jobId} as failed. Original error: ${errorMessage}. DB Error: ${msg}`,
     );
   }
 }
@@ -204,7 +204,7 @@ async function buildCommentMap(zid: number): Promise<Map<string, number>> {
 function mapRowData(
   row: ImportRow,
   zid: number,
-  commentMap: Map<string, number>
+  commentMap: Map<string, number>,
 ) {
   const internalTid = commentMap.get(row.comment_id);
   if (internalTid === undefined)
@@ -247,7 +247,7 @@ async function flushBatchToDb(rows: any[][]) {
       SELECT DISTINCT unnest($1::text[]), unnest($1::text[]) || '@import.local', $2::bigint
       ON CONFLICT (email) DO NOTHING
     `,
-      [usernames, timestamps[0]]
+      [usernames, timestamps[0]],
     );
 
     // 2. Participants
@@ -259,7 +259,7 @@ async function flushBatchToDb(rows: any[][]) {
       JOIN users u ON u.username = input_username
       ON CONFLICT (zid, uid) DO NOTHING
     `,
-      [zids[0], timestamps[0], usernames]
+      [zids[0], timestamps[0], usernames],
     );
 
     // 3. Resolve PIDs
@@ -271,7 +271,7 @@ async function flushBatchToDb(rows: any[][]) {
       WHERE p.zid = $1 
       AND u.username = ANY($2::text[])
     `,
-      [zids[0], usernames]
+      [zids[0], usernames],
     );
 
     const pidMap = new Map<string, number>();
@@ -302,7 +302,7 @@ async function flushBatchToDb(rows: any[][]) {
         INSERT INTO votes (zid, pid, tid, vote, created)
         SELECT $1::int, unnest($2::int[]), unnest($3::int[]), unnest($4::int[]), unnest($5::bigint[])
         `,
-        [zids[0], votePids, voteTids, voteValues, voteTimestamps]
+        [zids[0], votePids, voteTids, voteValues, voteTimestamps],
       );
     }
 
@@ -335,19 +335,25 @@ async function refreshVotesLatestUnique(zid: number) {
   await pg.queryP(query, [zid]);
 }
 
-async function triggerMathRecalc(zid: number) {
+export async function triggerMathRecalc(zid: number) {
+  // The math service discovers new votes by polling for `created` timestamps newer than its
+  // in-memory watermark (which starts at now minus POLL_FROM_DAYS_AGO, default 10 days).
+  // Imported votes keep their historical CSV timestamps, so that poller never sees them.
+  // Instead, enqueue an update_math worker task requesting a full recompute; the math
+  // service's task poller picks it up (worker_tasks.created defaults to now) and rebuilds
+  // the conversation from all votes in the database.
   const query = `
-    INSERT INTO math_ticks (zid, math_env, math_tick, modified)
-    VALUES ($1, 'prod', 1, (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint)
-    ON CONFLICT (zid, math_env) 
-    DO UPDATE SET 
-      math_tick = math_ticks.math_tick + 1,
-      modified = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint;
+    INSERT INTO worker_tasks (task_type, task_data, task_bucket, math_env)
+    VALUES ('update_math', $1, $2, $3);
   `;
-  await pg.queryP(query, [zid]);
+  await pg.queryP(query, [
+    JSON.stringify({ zid: zid, math_update_type: "recompute" }),
+    zid,
+    Config.mathEnv,
+  ]);
   await pg.queryP(
     "UPDATE conversations SET modified = (EXTRACT(EPOCH FROM NOW()) * 1000)::bigint WHERE zid = $1",
-    [zid]
+    [zid],
   );
 }
 
