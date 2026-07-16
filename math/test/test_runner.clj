@@ -8,6 +8,7 @@
             [index-hash-test]
             [named-matrix-test]
             [pca-test]
+            [recompute-test]
             [silhouette-test]
             [stats-test]
             [utils-test]
@@ -33,6 +34,7 @@
       index-hash-test
       named-matrix-test
       pca-test
+      recompute-test
       silhouette-test
       stats-test
       utils-test

@@ -55,7 +55,12 @@
   [{:as poller :keys [darwin conversation-manager]} task-record]
   (log/debug "Dispatching update_math task for:" task-record)
   (async/thread
-    (conv-man/queue-message-batch! conversation-manager :votes (-> task-record :task_data :zid) [])))
+    (let [{:keys [zid math_update_type]} (:task_data task-record)
+          ;; A "recompute" rebuilds the conversation from all votes in the database. Votes can land
+          ;; in the votes table with created timestamps outside the vote poller's window (e.g. BYOD
+          ;; imports of historical data), so an incremental :votes update would never see them.
+          message-type (if (= math_update_type "recompute") :recompute :votes)]
+      (conv-man/queue-message-batch! conversation-manager message-type zid []))))
 
 
 (defn poll

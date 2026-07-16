@@ -275,6 +275,21 @@
   [conv-man conv _ messages]
   (conv/mod-update conv messages))
 
+(defmethod react-to-messages :recompute
+  [conv-man conv _ _]
+  ;; Rebuild the conversation from all votes and moderation data in the database, discarding
+  ;; in-memory state. Votes can be inserted with created timestamps that fall outside the vote
+  ;; poller's window (e.g. BYOD imports of historical data), so an incremental :votes update
+  ;; would never see them; a full rebuild is the only way to fold them in.
+  (let [zid (:zid conv)
+        postgres (:postgres conv-man)
+        votes (db/conv-poll postgres zid 0)
+        fresh (-> (conv/new-conv)
+                  (assoc :zid zid :recompute :full)
+                  (conv/mod-update (db/conv-mod-poll postgres zid 0)))]
+    (log/info "Full recompute requested for zid" zid "with" (count votes) "votes")
+    (conv-update conv-man fresh votes)))
+
 (defmethod react-to-messages :generate_report_data
   [conv-man conv _ messages]
   (let [math-tick (or (:math-tick conv) (:math_tick conv))]
@@ -364,8 +379,11 @@
                 msgs (vec (concat retry-msgs [first-msg] (take-all! message-chan)))
                 ;; Regardless, now we split the messages by message type and process them as below
                 split-msgs (split-batches msgs)]
-            ;; This acts as a whitelist for messages to run, and also an ordering of preference
-            (doseq [message-type [:votes :moderation :generate_report_data]]
+            ;; This acts as a whitelist for messages to run, and also an ordering of preference.
+            ;; :recompute runs first: it rebuilds from the database, and any :votes/:moderation
+            ;; messages in the same drain are already committed there (the pollers read them from
+            ;; the db), so replaying them afterwards is idempotent.
+            (doseq [message-type [:recompute :votes :moderation :generate_report_data]]
               (when-let [messages (get split-msgs message-type)]
                 (react-to-messages! conv-man conv-actor message-type messages)))
             (recur)))))))
