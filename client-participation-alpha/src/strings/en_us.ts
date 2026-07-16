@@ -158,8 +158,9 @@ const s: Translations = {
   v2SelectToReact: "Select a statement to see reactions",
   v2GroupsNotFormed: "Groups haven’t formed yet",
   v2PeopleCount: "{{n}}",
-  v2StatReaction: "{{pct}}% of those who voted on this statement chose “{{stance}}”.",
-  v2StatReactionShort: "{{pct}}% voted “{{stance}}”",
+  v2StatReaction:
+    "{{pct}}% of those who voted on this statement chose “{{stance}}” (excluding “Pass / Unsure”).",
+  v2StatReactionShort: "{{pct}}% voted “{{stance}}” (excluding “Pass / Unsure”)",
   v2VotingInProgress: "Voting ({{n}} left)",
   v2AllAnsweredShort: "All answered",
   v2Pull: "Pull up",
