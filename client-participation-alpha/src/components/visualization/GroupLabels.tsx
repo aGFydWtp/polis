@@ -143,7 +143,7 @@ export function GroupLabels({
                   tabIndex={0}
                   aria-label={`${labelLetter} (${participantCount})`}
                   aria-pressed={isSelected}
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', outline: 'none' }}
                   onClick={() => onSelectGroup(groupId)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
