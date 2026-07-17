@@ -301,6 +301,7 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
                     groupVoteData={vm.viz.groupVoteData}
                     selectedGroup={vm.selectedGroup}
                     statementSelected={!!vm.selectedStatement}
+                    onSelectGroup={vm.selectGroup}
                   />
                 ) : (
                   <div

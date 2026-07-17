@@ -148,7 +148,14 @@ export default function PCAVisualization({
           {userPosition && <UserPositionIndicator userPosition={userPosition} />}
 
           {/* Group labels (rendered above shapes) */}
-          <GroupLabels hulls={hulls} selectedGroup={selectedGroup} userPosition={userPosition} />
+          <GroupLabels
+            hulls={hulls}
+            selectedGroup={selectedGroup}
+            userPosition={userPosition}
+            onSelectGroup={(groupId) =>
+              handleGroupSelect(selectedGroup === groupId ? null : groupId)
+            }
+          />
 
           {/* Horizontal bar charts for selected statement votes */}
           {selectedStatement && <VoteBarCharts hulls={hulls} groupVoteData={groupVoteData} />}

@@ -360,6 +360,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                 groupVoteData={vm.viz.groupVoteData}
                 selectedGroup={vm.selectedGroup}
                 statementSelected={!!vm.selectedStatement}
+                onSelectGroup={vm.selectGroup}
               />
             ) : (
               <div

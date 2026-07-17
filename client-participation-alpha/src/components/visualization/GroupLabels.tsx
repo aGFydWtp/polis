@@ -8,9 +8,16 @@ interface GroupLabelsProps {
   hulls: Hull[]
   selectedGroup: number | null
   userPosition: UserPosition | null
+  /** When provided, labels become clickable and report the clicked group's id. */
+  onSelectGroup?: (groupId: number) => void
 }
 
-export function GroupLabels({ hulls, selectedGroup, userPosition }: GroupLabelsProps) {
+export function GroupLabels({
+  hulls,
+  selectedGroup,
+  userPosition,
+  onSelectGroup
+}: GroupLabelsProps) {
   return (
     <>
       {hulls.map(({ groupId, participantCount, center }) => {
@@ -124,6 +131,28 @@ export function GroupLabels({ hulls, selectedGroup, userPosition }: GroupLabelsP
               <text x={numberX} y={iconSize / 2 - 4} textAnchor="start" {...textStyle}>
                 {participantCount}
               </text>
+              {onSelectGroup && (
+                // Transparent hit area, oversized so the label is easy to tap
+                <circle
+                  cx={labelX + labelWidth / 2}
+                  cy={0}
+                  r={Math.max(labelWidth, labelHeight) / 2 + 8}
+                  fill="transparent"
+                  pointerEvents="all"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${labelLetter} (${participantCount})`}
+                  aria-pressed={isSelected}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onSelectGroup(groupId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onSelectGroup(groupId)
+                    }
+                  }}
+                />
+              )}
             </motion.g>
           </Group>
         )

@@ -15,6 +15,8 @@ interface OpinionGroupMapProps {
   selectedGroup: number | null
   /** When a statement is selected, per-group vote bars are overlaid on the map. */
   statementSelected: boolean
+  /** Makes the group letter labels clickable (toggle handled by the parent). */
+  onSelectGroup?: (groupId: number) => void
 }
 
 /**
@@ -30,7 +32,8 @@ export default function OpinionGroupMap({
   userPosition,
   groupVoteData,
   selectedGroup,
-  statementSelected
+  statementSelected,
+  onSelectGroup
 }: OpinionGroupMapProps) {
   return (
     <svg
@@ -55,7 +58,12 @@ export default function OpinionGroupMap({
         {userPosition && <UserPositionIndicator userPosition={userPosition} />}
 
         {/* Group letter labels (A / B / C …) */}
-        <GroupLabels hulls={hulls} selectedGroup={selectedGroup} userPosition={userPosition} />
+        <GroupLabels
+          hulls={hulls}
+          selectedGroup={selectedGroup}
+          userPosition={userPosition}
+          onSelectGroup={onSelectGroup}
+        />
 
         {/* Per-group vote bars for the selected statement */}
         {statementSelected && <VoteBarCharts hulls={hulls} groupVoteData={groupVoteData} />}
