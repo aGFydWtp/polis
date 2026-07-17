@@ -1,7 +1,13 @@
 # 最小コスト本番構成 (単一EC2に全サービス同居)
 #
-# docker-compose.yml から Delphi/Ollama/import-worker/dynamodb/minio/localstack/ses-local を除外し、
-# コア6サービス + postgres のみを起動する。
+# docker-compose.yml から Delphi/Ollama/dynamodb/minio/ses-local を除外し、
+# コア6サービス + postgres + BYOD 票インポート用の localstack/import-worker を起動する。
+#
+# BYOD 票インポート (POST /api/v3/votes-bulk):
+#  - S3/SQS は実 AWS ではなく EC2 内の localstack (SERVICES=sqs,s3) で自己完結させる
+#    (EC2 ロールに S3/SQS 権限が不要でコスト最小。CSV は取り込み後に削除される一時データ)
+#  - dev と異なり minio は置かず、S3 も localstack が兼ねる
+#    (バケット/キューは bin/localstack-init-prod/init-aws.sh が作成)
 #
 # 起動: docker compose -f docker-compose.prod.yml up -d --build
 #
@@ -52,6 +58,12 @@ services:
       - DATABASE_SSL=${DATABASE_SSL}
       - AWS_LOG_GROUP_NAME=${AWS_LOG_GROUP_NAME}
       - NODE_EXTRA_CA_CERTS=/root/.simulacrum/certs/CA/rootCA.pem
+      # BYOD 票インポート: S3/SQS は localstack で自己完結 (認証情報はダミーで可)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-localstack}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-localstack}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT:-http://localstack:4566}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-polis-delphi}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL:-http://localstack:4566/000000000000/import-jobs-queue}
     networks:
       - "polis-net"
     volumes:
@@ -60,6 +72,7 @@ services:
     restart: unless-stopped
     depends_on:
       - "postgres"
+      - "localstack"
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -159,6 +172,48 @@ services:
     networks:
       - "polis-net"
     restart: unless-stopped
+
+  # BYOD 票インポートの SQS/S3 エミュレータ (EC2 内で自己完結)
+  localstack:
+    # 2026.x 以降はライセンストークン必須になったため、無料で使える最終版に固定
+    image: localstack/localstack:4.14.0
+    container_name: localstack
+    restart: unless-stopped
+    environment:
+      - SERVICES=sqs,s3
+    volumes:
+      - "./bin/localstack-init-prod:/etc/localstack/init/ready.d"
+    networks:
+      - "polis-net"
+
+  # BYOD 票インポートのジョブ処理ワーカー (SQS からジョブを取り出し S3 の CSV を votes に取り込む)
+  import-worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        NODE_ENV: production
+    container_name: import-worker
+    # prod イメージは tsc ビルド済みのため dist 配下のワーカーを直接起動する
+    command: node --max_old_space_size=1024 dist/src/workers/start-import-worker.js
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_SSL=${DATABASE_SSL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-localstack}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-localstack}
+      - AWS_S3_ENDPOINT=${AWS_S3_ENDPOINT:-http://localstack:4566}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME:-polis-delphi}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL:-http://localstack:4566/000000000000/import-jobs-queue}
+      - SERVER_LOG_LEVEL=info
+    networks:
+      - "polis-net"
+    restart: unless-stopped
+    depends_on:
+      - "postgres"
+      - "localstack"
 
 networks:
   polis-net:
