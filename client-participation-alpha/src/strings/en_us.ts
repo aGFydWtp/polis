@@ -151,7 +151,7 @@ const s: Translations = {
   v2AllAnsweredTitle: "You’ve answered every statement",
   v2AllAnsweredBody: "When new statements are added, you’ll be able to answer again.",
   v2OpinionGroupsDesc:
-    "People with similar opinions are grouped automatically. Select a group to see their perspective.",
+    "Once you vote on statements, you’ll see where you’re placed among the opinion groups.",
   v2VoteInDockHint: "Answer one at a time in the voting dock on the right.",
   v2GroupLabel: "Group",
   v2MajorOpinion: "Major opinions (overall)",

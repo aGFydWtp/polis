@@ -278,6 +278,9 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
               </span>
             </span>
           </div>
+          <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
+            {s.v2OpinionGroupsDesc}
+          </div>
 
           {/* While the vote card is open the left column is narrow, so the map and
               controls stack vertically (5a); when closed they sit side by side. */}
