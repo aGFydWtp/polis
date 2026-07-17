@@ -55,9 +55,21 @@ export interface RepnessItem {
   'best-agree'?: boolean
 }
 
+export interface PCAComponents {
+  /** Per-tid vote means, indexed by tid */
+  center: number[]
+  /** Principal components; comps[0] / comps[1] are the x / y loadings, indexed by tid */
+  comps: number[][]
+  'comment-extremity'?: number[]
+  'comment-projection'?: number[][]
+}
+
 export interface PCAData {
   'base-clusters': BaseClusters
   'group-clusters': GroupCluster[]
+  pca?: PCAComponents
+  /** tids moderated out of the math; excluded from projection */
+  'mod-out'?: number[]
   'group-aware-consensus'?: {
     [tid: string]: number
   }

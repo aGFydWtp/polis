@@ -20,3 +20,20 @@ export async function submitVote(payload: {
   }
   return await PolisNet.polisPost<VoteResponse>('/votes', finalPayload)
 }
+
+export interface SelfVoteRow {
+  tid: number
+  /** Raw vote sign: agree = -1, disagree = 1, pass = 0 */
+  vote: number
+  pid: number
+  [key: string]: unknown
+}
+
+/**
+ * Fetch the current participant's own votes for a conversation.
+ * The participant JWT (attached as a Bearer header by PolisNet) identifies
+ * the pid server-side; without a token the server returns an empty list.
+ */
+export async function fetchMyVotes(conversationId: string): Promise<SelfVoteRow[]> {
+  return await PolisNet.polisGet<SelfVoteRow[]>('/votes', { conversation_id: conversationId })
+}

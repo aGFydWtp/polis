@@ -33,10 +33,11 @@ const submitVoteAndGetNextCommentAPI = async (
     vote: vote.vote
   })
 
-  // Dispatch event to notify visualization to update
+  // Dispatch event to notify visualization to update.
+  // tid/vote let listeners update the client-side position projection immediately.
   window.dispatchEvent(
     new CustomEvent('polis-vote-submitted', {
-      detail: { conversation_id }
+      detail: { conversation_id, tid: vote.tid, vote: vote.vote }
     })
   )
   console.log('dispatched polis-vote-submitted event')

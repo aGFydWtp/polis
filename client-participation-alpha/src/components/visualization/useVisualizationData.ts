@@ -3,6 +3,7 @@ import concaveman from 'concaveman'
 import { useMemo } from 'react'
 import type { PCAData } from '../../api/types'
 import { CONCAVITY, LENGTH_THRESHOLD, xMax, yMax } from './constants'
+import { projectSelf, type SelfVote } from './projection'
 import type { BaseCluster, GroupVoteInfo, Hull, StatementWithType, UserPosition } from './types'
 import { selectTopConsensusItems, toVoteCounts } from './utils'
 
@@ -31,7 +32,8 @@ export function useVisualizationData(
   selectedGroup: number | null,
   isConsensusSelected: boolean,
   selectedStatementTid: number | null,
-  userPid: number | null
+  userPid: number | null,
+  ownVotes: SelfVote[] = []
 ) {
   // Transform the data into a more usable format
   const baseClusters: BaseCluster[] = useMemo(() => {
@@ -112,18 +114,30 @@ export function useVisualizationData(
   const originX = useMemo(() => xScale(0), [xScale])
   const originY = useMemo(() => yScale(0), [yScale])
 
-  // Find user's cluster position
+  // Find user's position: the server-computed cluster position when the math
+  // service has already bucketed this pid, otherwise an immediate client-side
+  // projection from the participant's own votes (recomputed on every vote).
   const userPosition: UserPosition | null = useMemo(() => {
-    if (userPid === null || userPid < 0) return null
-
-    const userCluster = baseClusters.find((cluster) => cluster.members.includes(userPid))
-    if (!userCluster) return null
-
-    return {
-      x: xScale(userCluster.x),
-      y: yScale(userCluster.y)
+    if (userPid !== null && userPid >= 0) {
+      const userCluster = baseClusters.find((cluster) => cluster.members.includes(userPid))
+      if (userCluster) {
+        return {
+          x: xScale(userCluster.x),
+          y: yScale(userCluster.y)
+        }
+      }
     }
-  }, [userPid, baseClusters, xScale, yScale])
+
+    const projected = projectSelf(ownVotes, data.pca, data['mod-out'])
+    if (!projected) return null
+
+    // Clamp to the plot area: a fresh projection can land outside the
+    // base-cluster extent the scales were derived from.
+    return {
+      x: Math.min(Math.max(xScale(projected.x), 0), xMax),
+      y: Math.min(Math.max(yScale(projected.y), 0), yMax)
+    }
+  }, [userPid, baseClusters, ownVotes, data, xScale, yScale])
 
   // Extract statements based on current context (consensus or group repness)
   const statements: StatementWithType[] = useMemo(() => {

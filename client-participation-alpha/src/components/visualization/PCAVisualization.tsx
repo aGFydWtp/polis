@@ -11,6 +11,7 @@ import { VisualizationControls } from './VisualizationControls'
 import { VoteBarCharts } from './VoteBarCharts'
 import { height, margin, width, xMax, yMax } from './constants'
 import type { SelectedStatement, StatementContext, StatementWithType } from './types'
+import { useOwnVotes } from './useOwnVotes'
 import { useVisualizationData } from './useVisualizationData'
 
 interface PCAVisualizationProps {
@@ -58,13 +59,17 @@ export default function PCAVisualization({
     return () => window.removeEventListener('polis-token-update', handleTokenUpdate)
   }, [conversationId])
 
+  // Track the participant's own votes for the client-side position projection
+  const ownVotes = useOwnVotes(conversationId)
+
   // Use custom hook to process all visualization data
   const { hulls, originX, originY, userPosition, statements, groupVoteData } = useVisualizationData(
     data,
     selectedGroup,
     isConsensusSelected,
     selectedStatement?.tid ?? null,
-    userPid
+    userPid,
+    ownVotes
   )
 
   // Find the comment text for the selected statement

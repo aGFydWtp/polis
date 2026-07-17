@@ -8,6 +8,7 @@ import type { Translations } from '../../strings/types'
 import type { StatementData, VoteData } from '../types'
 import { groupLetters, REFRESH_DELAY_MS } from '../visualization/constants'
 import type { SelectedStatement, StatementContext, StatementWithType } from '../visualization/types'
+import { useOwnVotes } from '../visualization/useOwnVotes'
 import { useVisualizationData } from '../visualization/useVisualizationData'
 import { aggregateGroupVotesForTid, selectTopConsensusItems } from '../visualization/utils'
 
@@ -91,7 +92,12 @@ const submitVoteAndGetNext = async (vote: VoteData, conversation_id: string) => 
   })
 
   // Notify the map/visualization data to refetch after a short delay.
-  window.dispatchEvent(new CustomEvent('polis-vote-submitted', { detail: { conversation_id } }))
+  // tid/vote let listeners update the client-side position projection immediately.
+  window.dispatchEvent(
+    new CustomEvent('polis-vote-submitted', {
+      detail: { conversation_id, tid: vote.tid, vote: vote.vote }
+    })
+  )
 
   return resp
 }
@@ -189,6 +195,8 @@ export function useVotingScreen({
         'group-aware-consensus',
         'group-votes',
         'repness',
+        'pca',
+        'mod-out',
         'mathTick'
       ]
       const [pca, cmts] = await Promise.all([
@@ -232,12 +240,15 @@ export function useVotingScreen({
     () => ({ 'base-clusters': { x: [], y: [], id: [], count: [] }, 'group-clusters': [] }),
     []
   )
+  const ownVotes = useOwnVotes(conversation_id)
+
   const viz = useVisualizationData(
     hasPca ? (pcaData as PCAData) : emptyPca,
     selectedGroup,
     isConsensusSelected,
     selectedStatement?.tid ?? null,
-    userPid
+    userPid,
+    ownVotes
   )
 
   const groups: GroupInfo[] = useMemo(

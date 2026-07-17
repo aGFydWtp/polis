@@ -42,6 +42,8 @@ export default function VisualizationContainer({
           'group-aware-consensus',
           'group-votes',
           'repness',
+          'pca',
+          'mod-out',
           'mathTick'
         ]
 
