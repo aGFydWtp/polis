@@ -181,6 +181,9 @@ services:
     restart: unless-stopped
     environment:
       - SERVICES=sqs,s3
+      # SQS のキューはリージョン単位で分離されるため、server/import-worker が署名に使う
+      # AWS_REGION (.env 由来) と同じリージョンで init スクリプトにリソースを作らせる
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
     volumes:
       - "./bin/localstack-init-prod:/etc/localstack/init/ready.d"
     networks:
