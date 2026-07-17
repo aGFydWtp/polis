@@ -201,7 +201,7 @@ async function buildCommentMap(zid: number): Promise<Map<string, number>> {
   return map;
 }
 
-function mapRowData(
+export function mapRowData(
   row: ImportRow,
   zid: number,
   commentMap: Map<string, number>,
@@ -210,10 +210,23 @@ function mapRowData(
   if (internalTid === undefined)
     throw new Error(`Comment UUID ${row.comment_id} not found`);
 
-  let ts = Date.now();
+  const now = Date.now();
+  let ts = now;
   if (row.timestamp) {
     const parsed = Date.parse(row.timestamp);
-    if (!isNaN(parsed)) ts = parsed;
+    if (!isNaN(parsed)) {
+      // Clamp future timestamps to now: votes.created feeds the math
+      // service's incremental polling watermark, and a future value stalls
+      // pickup of all subsequent real-time votes.
+      if (parsed > now) {
+        logger.warn(
+          `[Worker] Row timestamp "${row.timestamp}" is in the future; clamping to now (zid ${zid}, comment_id ${row.comment_id}, user_id ${row.user_id})`,
+        );
+        ts = now;
+      } else {
+        ts = parsed;
+      }
+    }
   }
   // INTETNIONAL VOTE FLIPPING, REMOVE AFTER VOTES REFACTOR
   let voteValue = parseInt(row.vote_value, 10);

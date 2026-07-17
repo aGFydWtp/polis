@@ -43,7 +43,9 @@ jest.mock("@aws-sdk/client-s3", () => {
 });
 
 import pg from "../../src/db/pg-query";
+import logger from "../../src/utils/logger";
 import {
+  mapRowData,
   processImportJob,
   triggerMathRecalc,
   s3Client,
@@ -202,5 +204,105 @@ describe("processImportJob", () => {
     );
     expect(completedCall).toBeDefined();
     expect((completedCall as [string, any[]])[1]).toEqual([55]);
+  });
+});
+
+describe("mapRowData", () => {
+  const ZID = 3;
+  const NOW = Date.parse("2026-07-17T10:00:00.000Z");
+  const warnMock = logger.warn as jest.Mock;
+
+  let commentMap: Map<string, number>;
+  let nowSpy: jest.SpiedFunction<typeof Date.now>;
+
+  function makeRow(overrides: Partial<Record<string, string>> = {}) {
+    return {
+      vote_id: "v-1",
+      user_id: "user-1",
+      vote_value: "1",
+      timestamp: "2026-07-17T09:00:00.000Z",
+      comment_id: "comment-uuid-1",
+      ...overrides,
+    };
+  }
+
+  beforeEach(() => {
+    commentMap = new Map([["comment-uuid-1", 42]]);
+    nowSpy = jest.spyOn(Date, "now").mockReturnValue(NOW);
+  });
+
+  afterEach(() => {
+    nowSpy.mockRestore();
+  });
+
+  it("keeps a past timestamp as-is", () => {
+    const row = makeRow({ timestamp: "2026-07-17T09:00:00.000Z" });
+
+    const [zid, tid, userId, , ts] = mapRowData(row, ZID, commentMap);
+
+    expect(zid).toBe(ZID);
+    expect(tid).toBe(42);
+    expect(userId).toBe("user-1");
+    expect(ts).toBe(Date.parse("2026-07-17T09:00:00.000Z"));
+    expect(warnMock).not.toHaveBeenCalled();
+  });
+
+  it("clamps a future timestamp to now and logs a warning", () => {
+    const row = makeRow({ timestamp: "2026-07-17T12:00:00.000Z" });
+
+    const [, , , , ts] = mapRowData(row, ZID, commentMap);
+
+    expect(ts).toBe(NOW);
+    expect(warnMock).toHaveBeenCalledTimes(1);
+    expect(warnMock).toHaveBeenCalledWith(
+      expect.stringContaining("2026-07-17T12:00:00.000Z"),
+    );
+  });
+
+  it("keeps a timestamp exactly equal to now without warning", () => {
+    const row = makeRow({ timestamp: "2026-07-17T10:00:00.000Z" });
+
+    const [, , , , ts] = mapRowData(row, ZID, commentMap);
+
+    expect(ts).toBe(NOW);
+    expect(warnMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to now for an unparseable timestamp without warning", () => {
+    const row = makeRow({ timestamp: "not-a-date" });
+
+    const [, , , , ts] = mapRowData(row, ZID, commentMap);
+
+    expect(ts).toBe(NOW);
+    expect(warnMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to now for an empty timestamp", () => {
+    const row = makeRow({ timestamp: "" });
+
+    const [, , , , ts] = mapRowData(row, ZID, commentMap);
+
+    expect(ts).toBe(NOW);
+    expect(warnMock).not.toHaveBeenCalled();
+  });
+
+  it("flips vote values (1 <-> -1) pending the votes refactor", () => {
+    expect(mapRowData(makeRow({ vote_value: "1" }), ZID, commentMap)[3]).toBe(
+      -1,
+    );
+    expect(mapRowData(makeRow({ vote_value: "-1" }), ZID, commentMap)[3]).toBe(
+      1,
+    );
+    expect(mapRowData(makeRow({ vote_value: "0" }), ZID, commentMap)[3]).toBe(
+      0,
+    );
+  });
+
+  it("throws when the comment_id is not in the comment map", () => {
+    const row = makeRow({ comment_id: "unknown-uuid" });
+
+    expect(() => mapRowData(row, ZID, commentMap)).toThrow(
+      "Comment UUID unknown-uuid not found",
+    );
   });
 });
