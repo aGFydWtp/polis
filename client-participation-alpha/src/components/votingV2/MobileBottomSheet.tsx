@@ -2,6 +2,7 @@ import type { CSSProperties, KeyboardEvent } from 'react'
 import type { Translations } from '../../strings/types'
 import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
+import GroupsInfoTip from './GroupsInfoTip'
 import OpinionGroupMap from './OpinionGroupMap'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
@@ -336,7 +337,10 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
 
         {/* Opinion groups */}
         <div style={{ marginTop: 20, marginBottom: 10 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
+            <GroupsInfoTip s={s} />
+          </div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
             {s.v2OpinionGroupsDesc}
           </div>

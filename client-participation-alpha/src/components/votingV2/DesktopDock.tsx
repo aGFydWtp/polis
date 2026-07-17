@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
+import GroupsInfoTip from './GroupsInfoTip'
 import OpinionGroupMap from './OpinionGroupMap'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
@@ -14,15 +15,6 @@ const STAGE_MAX = 1024
 const CARD_RIGHT = `max(0px, calc((100% - ${STAGE_MAX}px) / 2))`
 /** Collapsed card height — enough for the progress row + CTA button. */
 const CLOSED_CARD_H = 132
-
-/** Hover/focus tooltip for the opinion-group ⓘ icon (ported from the 5a mock). */
-const GTIP_CSS = `
-.v2gtip{position:relative;display:inline-flex}
-.v2gtip>.v2gtipbox{position:absolute;top:calc(100% + 8px);left:-4px;width:264px;background:#1f2a44;color:#dbe2ef;font-size:12px;line-height:1.75;font-weight:400;text-align:left;padding:13px 15px;border-radius:11px;box-shadow:0 14px 34px -10px rgba(20,24,40,.55);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity .16s ease,transform .16s ease,visibility .16s;z-index:60;pointer-events:none}
-.v2gtip:hover>.v2gtipbox,.v2gtip:focus-within>.v2gtipbox{opacity:1;visibility:visible;transform:translateY(0)}
-.v2gtipbox p{margin:0 0 9px}
-.v2gtipbox p:last-child{margin:0}
-`
 
 type VM = ReturnType<typeof useVotingScreen>
 
@@ -177,7 +169,6 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
         overflow: 'hidden'
       }}
     >
-      <style>{GTIP_CSS}</style>
       {/* header bar — full-bleed background, content constrained to the 900px band */}
       <div style={{ flex: 'none', background: INK, color: '#fff' }}>
         <div
@@ -248,35 +239,7 @@ export default function DesktopDock({ s, topic, description, vm }: DesktopDockPr
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
-            <span
-              className="v2gtip"
-              tabIndex={0}
-              role="button"
-              aria-label={s.opinionGroups}
-              style={{ outline: 'none' }}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#8794ad"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ cursor: 'pointer', display: 'block' }}
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4" />
-                <path d="M12 8h.01" />
-              </svg>
-              <span className="v2gtipbox">
-                {s.v2GroupsTooltip.split('\n\n').map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </span>
-            </span>
+            <GroupsInfoTip s={s} />
           </div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
             {s.v2OpinionGroupsDesc}
