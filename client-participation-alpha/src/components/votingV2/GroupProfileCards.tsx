@@ -29,7 +29,6 @@ function GroupProfileCard({ s, profile }: { s: Translations; profile: GroupProfi
         style={{
           background: '#f1f3f8',
           padding: '14px 16px',
-          textAlign: 'center',
           fontSize: 15,
           fontWeight: 700,
           color: INK
