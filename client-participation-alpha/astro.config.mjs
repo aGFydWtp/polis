@@ -12,7 +12,9 @@ export default defineConfig({
     mode: 'standalone'
   }),
   server: {
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    // Respect an externally assigned port (e.g. preview tooling); default stays 4321
+    port: process.env.PORT ? Number(process.env.PORT) : 4321
   },
   integrations: [
     react({
