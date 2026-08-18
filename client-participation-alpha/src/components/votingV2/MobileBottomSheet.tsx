@@ -236,7 +236,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
       />
       {/* Hero — full-width band; content constrained to the main column width */}
       <div style={{ background: INK, color: '#fff', padding: '16px 20px 22px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
           <div
             style={{
               fontSize: 14,
@@ -265,7 +265,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: '-10px auto 0', padding: '0 18px 26px' }}>
+      <div style={{ maxWidth: 1000, margin: '-10px auto 0', padding: '0 18px 26px' }}>
         {/* Progress + CTA */}
         <div
           style={{
