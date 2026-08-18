@@ -174,7 +174,8 @@ const s: Translations = {
   v2ConsensusCenterAgree: "agree",
   v2ConsensusCount: "({{n}})",
   v2GroupRepOpinionsTitle: "Representative opinions from Group {{name}}",
-  v2GroupRepDisagreeSuffix: "— opposed"
+  v2GroupRepDisagreeSuffix: "— opposed",
+  v2YouBubble: "You"
 }
 
 export default s

@@ -400,6 +400,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                   selectedGroup={vm.selectedGroup}
                   statementSelected={!!vm.selectedStatement}
                   onSelectGroup={vm.selectGroup}
+                  youLabel={s.v2YouBubble}
                 />
               ) : (
                 <div

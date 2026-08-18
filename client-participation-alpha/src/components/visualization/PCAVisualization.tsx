@@ -150,7 +150,9 @@ export default function PCAVisualization({
           <GroupHulls hulls={hulls} selectedGroup={selectedGroup} />
 
           {/* User position indicator */}
-          {userPosition && <UserPositionIndicator userPosition={userPosition} />}
+          {userPosition && (
+            <UserPositionIndicator userPosition={userPosition} label={s.v2YouBubble} />
+          )}
 
           {/* Group labels (rendered above shapes) */}
           <GroupLabels

@@ -119,5 +119,6 @@ s.v2ConsensusCenterAgree = "が賛成"
 s.v2ConsensusCount = "({{n}}人)"
 s.v2GroupRepOpinionsTitle = "グループ{{name}}の代表的な意見"
 s.v2GroupRepDisagreeSuffix = "に反対"
+s.v2YouBubble = "あなた"
 
 export default s

@@ -17,6 +17,8 @@ interface OpinionGroupMapProps {
   statementSelected: boolean
   /** Makes the group letter labels clickable (toggle handled by the parent). */
   onSelectGroup?: (groupId: number) => void
+  /** Speech-bubble text shown persistently on the participant's own marker. */
+  youLabel: string
 }
 
 /**
@@ -33,7 +35,8 @@ export default function OpinionGroupMap({
   groupVoteData,
   selectedGroup,
   statementSelected,
-  onSelectGroup
+  onSelectGroup,
+  youLabel
 }: OpinionGroupMapProps) {
   return (
     <svg
@@ -55,7 +58,7 @@ export default function OpinionGroupMap({
         <GroupHulls hulls={hulls} selectedGroup={selectedGroup} />
 
         {/* User position indicator */}
-        {userPosition && <UserPositionIndicator userPosition={userPosition} />}
+        {userPosition && <UserPositionIndicator userPosition={userPosition} label={youLabel} />}
 
         {/* Group letter labels (A / B / C …) */}
         <GroupLabels

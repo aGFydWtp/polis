@@ -123,4 +123,6 @@ export interface Translations {
   v2GroupRepOpinionsTitle: string
   /** Per-group profile card: suffix appended to comments the group predominantly disagreed with. */
   v2GroupRepDisagreeSuffix: string
+  /** Opinion map: persistent speech-bubble label on the participant's own position marker. */
+  v2YouBubble: string
 }
