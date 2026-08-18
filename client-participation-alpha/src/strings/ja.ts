@@ -116,9 +116,12 @@ s.v2VotePrompt = "Q. この意見に、あなたはどう思いますか？"
 s.v2ConsensusTitle = "みんなの共通意見"
 s.v2ConsensusSubtitle = "グループを越えて賛否が一致した意見です。"
 s.v2ConsensusCenterAgree = "が賛成"
+s.v2ConsensusCenterDisagree = "が反対"
 s.v2ConsensusCount = "({{n}}人)"
-s.v2GroupRepOpinionsTitle = "グループ{{name}}の代表的な意見"
+s.v2GroupRepOpinionsTitle = "グループ{{name}}を特徴づける意見"
 s.v2GroupRepDisagreeSuffix = "に反対"
 s.v2YouBubble = "あなた"
+s.v2GroupAgreedTitle = "グループ{{name}}で同意されている意見"
+s.v2GroupAgreedSubtitle = "グループ{{name}}内で賛成または反対が多数だった意見です。"
 
 export default s

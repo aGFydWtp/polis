@@ -67,6 +67,15 @@ export interface ConsensusStatement {
   passPct: number
 }
 
+/** One group's agreed-opinions section (same card layout as the consensus section). */
+export interface GroupConsensus {
+  groupId: number
+  /** Display letter (A, B, C, ...) */
+  name: string
+  /** Statements the group has a clear majority on (agree or disagree), ranked by majority rate. */
+  items: ConsensusStatement[]
+}
+
 export interface StatSummary {
   /** Statement id (tid) */
   num: number
@@ -365,6 +374,61 @@ export function useVotingScreen({
     return items
   }, [hasPca, pcaData, comments])
 
+  // ── Per-group agreed opinions (グループ◯で同意されている意見) ──────
+  const groupConsensusItems: GroupConsensus[] = useMemo(() => {
+    const groupVotes = pcaData?.['group-votes']
+    if (!hasPca || !groupVotes || !comments) return []
+
+    return Object.entries(groupVotes)
+      .map(([gidStr, g]) => {
+        const groupId = parseInt(gidStr, 10)
+
+        // Rank statements by the strength of the in-group majority (agree or
+        // disagree); keep only ones where either side is a clear majority
+        const scores: Record<string, number> = {}
+        Object.entries(g.votes).forEach(([tidStr, v]) => {
+          if (v.S === 0) return
+          const majorityRate = Math.max(v.A, v.D) / v.S
+          if (majorityRate > 0.5) scores[tidStr] = majorityRate
+        })
+
+        const items: ConsensusStatement[] = []
+        selectTopConsensusItems(scores).forEach((tidStr) => {
+          const tid = parseInt(tidStr, 10)
+          const comment = comments.find((c) => c.tid === tid)
+          if (!comment) return
+
+          const v = g.votes[tidStr]
+          const agree = v.A
+          const disagree = v.D
+          const total = v.S
+          const pass = Math.max(0, total - agree - disagree)
+          items.push({
+            tid,
+            text: comment.txt,
+            agree,
+            disagree,
+            pass,
+            agreePct: Math.round((agree / total) * 100),
+            disagreePct: Math.round((disagree / total) * 100),
+            passPct: Math.round((pass / total) * 100)
+          })
+        })
+
+        // Agree-majority cards first (by agree rate), then disagree-majority (by disagree rate)
+        items.sort((a, b) => {
+          const aDisagree = a.disagree > a.agree
+          const bDisagree = b.disagree > b.agree
+          if (aDisagree !== bDisagree) return aDisagree ? 1 : -1
+          return aDisagree ? b.disagreePct - a.disagreePct : b.agreePct - a.agreePct
+        })
+
+        return { groupId, name: groupLetters[groupId] ?? String(groupId), items }
+      })
+      .filter((g) => g.items.length > 0)
+      .sort((a, b) => a.groupId - b.groupId)
+  }, [hasPca, pcaData, comments])
+
   // ── Selection handlers (group / consensus / statement are exclusive) ──
   const selectGroup = useCallback((groupId: number | null) => {
     setSelectedGroup((prev) => (prev === groupId ? null : groupId))
@@ -469,6 +533,7 @@ export function useVotingScreen({
     chips,
     stat,
     consensusItems,
+    groupConsensusItems,
     selectedGroup,
     isConsensusSelected,
     selectedStatement,

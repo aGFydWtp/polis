@@ -117,6 +117,8 @@ export interface Translations {
   v2ConsensusSubtitle: string
   /** Consensus section (6d): donut center label shown under the agree %. */
   v2ConsensusCenterAgree: string
+  /** Donut center label shown under the disagree % (majority-disagree cards). */
+  v2ConsensusCenterDisagree: string
   /** Consensus section (6d): parenthesized voter-count format, e.g. "({{n}}人)". */
   v2ConsensusCount: string
   /** Per-group profile card header, e.g. "グループAの代表的な意見". */
@@ -125,4 +127,8 @@ export interface Translations {
   v2GroupRepDisagreeSuffix: string
   /** Opinion map: persistent speech-bubble label on the participant's own position marker. */
   v2YouBubble: string
+  /** Per-group agreed-opinions section heading, e.g. "グループAで同意されている意見". */
+  v2GroupAgreedTitle: string
+  /** Per-group agreed-opinions section: explanatory subtitle under the heading. */
+  v2GroupAgreedSubtitle: string
 }

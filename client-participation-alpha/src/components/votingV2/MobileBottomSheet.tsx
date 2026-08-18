@@ -449,6 +449,21 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
           variant={isDesktop ? 'desktop' : 'mobile'}
           columns={isDesktop ? 2 : 1}
         />
+
+        {/* グループ◯で同意されている意見 — per-group agreed opinions, same
+            donut-card layout as the consensus section, ordered A, B, C… */}
+        {vm.groupConsensusItems.map((group) => (
+          <ConsensusSection
+            key={`group-consensus-${group.groupId}`}
+            s={s}
+            items={group.items}
+            variant={isDesktop ? 'desktop' : 'mobile'}
+            columns={isDesktop ? 2 : 1}
+            title={s.v2GroupAgreedTitle.replace('{{name}}', group.name)}
+            subtitle={s.v2GroupAgreedSubtitle.replace('{{name}}', group.name)}
+            highlightDominant
+          />
+        ))}
       </div>
 
       {/* Dim overlay when open (kept mounted so the fade animates both ways) */}

@@ -71,8 +71,26 @@ const SIZES: Record<'desktop' | 'mobile', SizeSpec> = {
 }
 
 /** Stacked donut: agree (green, round cap) → disagree (red) → pass (gray). */
-function Donut({ s, item, size }: { s: Translations; item: ConsensusStatement; size: SizeSpec }) {
+function Donut({
+  s,
+  item,
+  size,
+  highlightDominant = false
+}: {
+  s: Translations
+  item: ConsensusStatement
+  size: SizeSpec
+  /** Show the majority side (agree or disagree) in the center instead of always agree. */
+  highlightDominant?: boolean
+}) {
   const total = item.agree + item.disagree + item.pass
+  const showDisagree = highlightDominant && item.disagree > item.agree
+  const centerPct = showDisagree ? item.disagreePct : item.agreePct
+  const centerColor = showDisagree ? DISAGREE_COLOR : AGREE_COLOR
+  const centerLabel = showDisagree ? s.v2ConsensusCenterDisagree : s.v2ConsensusCenterAgree
+  // Three-digit values (100%) overflow the donut hole at the regular size
+  const centerNumberSize =
+    centerPct >= 100 ? Math.round(size.centerNumberSize * 0.75) : size.centerNumberSize
   const arcs = [
     { color: AGREE_COLOR, count: item.agree, round: true },
     { color: DISAGREE_COLOR, count: item.disagree, round: false },
@@ -120,8 +138,8 @@ function Donut({ s, item, size }: { s: Translations; item: ConsensusStatement; s
           lineHeight: 1
         }}
       >
-        <span style={{ fontSize: size.centerNumberSize, fontWeight: 700, color: AGREE_COLOR }}>
-          {item.agreePct}
+        <span style={{ fontSize: centerNumberSize, fontWeight: 700, color: centerColor }}>
+          {centerPct}
           <span style={{ fontSize: size.centerPctSize }}>%</span>
         </span>
         <span
@@ -132,7 +150,7 @@ function Donut({ s, item, size }: { s: Translations; item: ConsensusStatement; s
             marginTop: 3
           }}
         >
-          {s.v2ConsensusCenterAgree}
+          {centerLabel}
         </span>
       </div>
     </div>
@@ -176,11 +194,13 @@ function LegendRow({
 function ConsensusCard({
   s,
   item,
-  size
+  size,
+  highlightDominant
 }: {
   s: Translations
   item: ConsensusStatement
   size: SizeSpec
+  highlightDominant?: boolean
 }) {
   const cardStyle: CSSProperties = {
     background: '#fff',
@@ -228,7 +248,7 @@ function ConsensusCard({
           marginTop: size.bodyGap
         }}
       >
-        <Donut s={s} item={item} size={size} />
+        <Donut s={s} item={item} size={size} highlightDominant={highlightDominant} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 11 }}>
           <LegendRow
             color={AGREE_COLOR}
@@ -266,22 +286,31 @@ interface ConsensusSectionProps {
   variant: 'desktop' | 'mobile'
   /** Cards per row; 2 while the desktop vote card is closed and width allows. */
   columns?: 1 | 2
+  /** Section heading; defaults to the cross-group consensus title. */
+  title?: string
+  /** Explanatory subtitle under the heading; defaults to the consensus subtitle. */
+  subtitle?: string
+  /** Donut centers show the majority side (agree or disagree) instead of always agree. */
+  highlightDominant?: boolean
 }
 
 export default function ConsensusSection({
   s,
   items,
   variant,
-  columns = 1
+  columns = 1,
+  title,
+  subtitle,
+  highlightDominant
 }: ConsensusSectionProps) {
   if (items.length === 0) return null
   const size = SIZES[variant]
 
   return (
-    <div style={{ marginTop: variant === 'desktop' ? 36 : 28 }}>
-      <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>{s.v2ConsensusTitle}</div>
+    <div style={{ marginTop: 48 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>{title ?? s.v2ConsensusTitle}</div>
       <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 4 }}>
-        {s.v2ConsensusSubtitle}
+        {subtitle ?? s.v2ConsensusSubtitle}
       </div>
       <div
         style={{
@@ -291,7 +320,13 @@ export default function ConsensusSection({
         }}
       >
         {items.map((item) => (
-          <ConsensusCard key={item.tid} s={s} item={item} size={size} />
+          <ConsensusCard
+            key={item.tid}
+            s={s}
+            item={item}
+            size={size}
+            highlightDominant={highlightDominant}
+          />
         ))}
       </div>
     </div>

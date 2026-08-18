@@ -172,10 +172,14 @@ const s: Translations = {
   v2ConsensusTitle: "Shared opinions",
   v2ConsensusSubtitle: "Statements where opinion aligned across groups.",
   v2ConsensusCenterAgree: "agree",
+  v2ConsensusCenterDisagree: "disagree",
   v2ConsensusCount: "({{n}})",
-  v2GroupRepOpinionsTitle: "Representative opinions from Group {{name}}",
+  v2GroupRepOpinionsTitle: "Opinions that characterize Group {{name}}",
   v2GroupRepDisagreeSuffix: "— opposed",
-  v2YouBubble: "You"
+  v2YouBubble: "You",
+  v2GroupAgreedTitle: "Opinions Group {{name}} agrees on",
+  v2GroupAgreedSubtitle:
+    "Statements with a clear majority (agree or disagree) within Group {{name}}."
 }
 
 export default s
