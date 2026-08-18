@@ -672,7 +672,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
                     }}
                   >
                     <div
-                      style={{ fontSize: 16, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}
+                      style={{ fontSize: 18, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}
                     >
                       {vm.statement.txt}
                     </div>
