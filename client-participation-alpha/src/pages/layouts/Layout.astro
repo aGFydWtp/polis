@@ -18,6 +18,13 @@ const { title = 'Polis Conversation', lang = 'en', dir = 'ltr' } = Astro.props;
     <meta name="theme-color" content="#1f2a44" />
     <!-- Relative URL so it works when app is mounted at /alpha/ behind nginx -->
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Noto Sans JP for a consistent typeface across platforms -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <title>{title}</title>
 </head>
 <body>
