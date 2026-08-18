@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react'
 import type { Translations } from '../../strings/types'
 import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
@@ -8,6 +8,24 @@ import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './us
 
 const INK = '#1f2a44'
 const INDIGO = '#3b5bdb'
+
+const DESKTOP_QUERY = '(min-width: 900px)'
+
+/**
+ * Tracks whether the viewport is desktop-width. Starts false so SSR and the
+ * first client render agree (mobile layout), then updates after measurement.
+ */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_QUERY)
+    const update = () => setIsDesktop(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+  return isDesktop
+}
 
 type VM = ReturnType<typeof useVotingScreen>
 
@@ -189,6 +207,7 @@ function DoneBlock({ s }: { s: Translations }) {
 
 export default function MobileBottomSheet({ s, topic, description, vm }: MobileBottomSheetProps) {
   const showMap = vm.groupsEnabled && vm.hasPca
+  const isDesktop = useIsDesktop()
 
   return (
     <div
@@ -243,10 +262,12 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         )}
       </div>
 
-      <div style={{ padding: '0 18px 26px', marginTop: -10 }}>
+      <div style={{ maxWidth: 1100, margin: '-10px auto 0', padding: '0 18px 26px' }}>
         {/* Progress + CTA */}
         <div
           style={{
+            maxWidth: 600,
+            margin: '0 auto',
             background: '#fff',
             borderRadius: 18,
             padding: 16,
@@ -287,33 +308,28 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
           </div>
 
           {vm.notDone ? (
-            <>
-              <button
-                onClick={vm.openSheet}
-                style={{
-                  width: '100%',
-                  padding: 15,
-                  border: 'none',
-                  borderRadius: 14,
-                  background: INDIGO,
-                  color: '#fff',
-                  fontFamily: 'inherit',
-                  fontSize: 15.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 9,
-                  boxShadow: '0 10px 22px -10px rgba(59,91,219,.7)'
-                }}
-              >
-                {s.v2VoteCta}
-              </button>
-              <div style={{ textAlign: 'center', fontSize: 14, color: '#9aa2b1', marginTop: 9 }}>
-                {s.v2CtaHint}
-              </div>
-            </>
+            <button
+              onClick={vm.openSheet}
+              style={{
+                width: '100%',
+                padding: 15,
+                border: 'none',
+                borderRadius: 14,
+                background: INDIGO,
+                color: '#fff',
+                fontFamily: 'inherit',
+                fontSize: 15.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 9,
+                boxShadow: '0 10px 22px -10px rgba(59,91,219,.7)'
+              }}
+            >
+              {s.v2VoteCta}
+            </button>
           ) : vm.allDone ? (
             <div
               style={{
@@ -354,73 +370,100 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             border: '1px solid #e7ebf2'
           }}
         >
-          <div style={{ borderRadius: 12, background: '#fafbfd', padding: '8px 4px' }}>
-            {showMap ? (
-              <OpinionGroupMap
-                hulls={vm.viz.hulls}
-                originX={vm.viz.originX}
-                originY={vm.viz.originY}
-                userPosition={vm.viz.userPosition}
-                groupVoteData={vm.viz.groupVoteData}
-                selectedGroup={vm.selectedGroup}
-                statementSelected={!!vm.selectedStatement}
-                onSelectGroup={vm.selectGroup}
-              />
-            ) : (
-              <div
-                style={{
-                  padding: '48px 16px',
-                  textAlign: 'center',
-                  fontSize: 14,
-                  color: '#8794ad'
-                }}
-              >
-                {s.v2GroupsNotFormed}
+          {/* Map and controls sit side by side at desktop widths (like the old
+              desktop band), stacked on mobile. */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: isDesktop ? 'row' : 'column',
+              gap: isDesktop ? 24 : 0,
+              alignItems: isDesktop ? 'flex-start' : 'stretch'
+            }}
+          >
+            <div
+              style={{
+                flex: isDesktop ? 1 : 'none',
+                minWidth: 0,
+                borderRadius: 12,
+                background: '#fafbfd',
+                padding: '8px 4px'
+              }}
+            >
+              {showMap ? (
+                <OpinionGroupMap
+                  hulls={vm.viz.hulls}
+                  originX={vm.viz.originX}
+                  originY={vm.viz.originY}
+                  userPosition={vm.viz.userPosition}
+                  groupVoteData={vm.viz.groupVoteData}
+                  selectedGroup={vm.selectedGroup}
+                  statementSelected={!!vm.selectedStatement}
+                  onSelectGroup={vm.selectGroup}
+                />
+              ) : (
+                <div
+                  style={{
+                    padding: '48px 16px',
+                    textAlign: 'center',
+                    fontSize: 14,
+                    color: '#8794ad'
+                  }}
+                >
+                  {s.v2GroupsNotFormed}
+                </div>
+              )}
+            </div>
+
+            {showMap && (
+              <div style={{ flex: 'none', width: isDesktop ? 300 : 'auto' }}>
+                <div style={{ marginTop: isDesktop ? 0 : 12 }}>
+                  <GroupControls
+                    s={s}
+                    groups={vm.groups}
+                    chips={vm.chips}
+                    selectedGroup={vm.selectedGroup}
+                    isConsensusSelected={vm.isConsensusSelected}
+                    selectedStatement={vm.selectedStatement}
+                    onMajor={vm.toggleConsensus}
+                    onSelectGroup={vm.selectGroup}
+                    onSelectChip={vm.selectChip}
+                    divider={isDesktop}
+                  />
+                </div>
+                {vm.stat && <StatCard s={s} stat={vm.stat} variant="mobile" />}
               </div>
             )}
           </div>
-
-          {showMap && (
-            <>
-              <div style={{ marginTop: 12 }}>
-                <GroupControls
-                  s={s}
-                  groups={vm.groups}
-                  chips={vm.chips}
-                  selectedGroup={vm.selectedGroup}
-                  isConsensusSelected={vm.isConsensusSelected}
-                  selectedStatement={vm.selectedStatement}
-                  onMajor={vm.toggleConsensus}
-                  onSelectGroup={vm.selectGroup}
-                  onSelectChip={vm.selectChip}
-                />
-              </div>
-              {vm.stat && <StatCard s={s} stat={vm.stat} variant="mobile" />}
-            </>
-          )}
         </div>
 
-        {/* みんなの共通意見 — cross-group consensus donut cards (6d) */}
-        <ConsensusSection s={s} items={vm.consensusItems} variant="mobile" />
+        {/* みんなの共通意見 — cross-group consensus donut cards (6d);
+            two-up at desktop widths */}
+        <ConsensusSection
+          s={s}
+          items={vm.consensusItems}
+          variant={isDesktop ? 'desktop' : 'mobile'}
+          columns={isDesktop ? 2 : 1}
+        />
       </div>
 
-      {/* Dim overlay when open */}
-      {vm.sheetOpen && (
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label={s.v2Close}
-          onClick={vm.closeSheet}
-          onKeyDown={activateOnKey(vm.closeSheet)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15,20,35,.32)',
-            zIndex: 15,
-            animation: 'fade .3s ease'
-          }}
-        />
-      )}
+      {/* Dim overlay when open (kept mounted so the fade animates both ways) */}
+      <div
+        role="button"
+        tabIndex={vm.sheetOpen ? 0 : -1}
+        aria-label={s.v2Close}
+        aria-hidden={!vm.sheetOpen}
+        onClick={vm.closeSheet}
+        onKeyDown={activateOnKey(vm.closeSheet)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15,20,35,.32)',
+          zIndex: 15,
+          opacity: vm.sheetOpen ? 1 : 0,
+          pointerEvents: vm.sheetOpen ? 'auto' : 'none',
+          transition: 'opacity .3s ease'
+        }}
+      />
 
       {/* Bottom sheet */}
       <div
@@ -429,6 +472,8 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
           left: 0,
           right: 0,
           bottom: 0,
+          maxWidth: 600,
+          margin: '0 auto',
           zIndex: 20,
           background: '#fff',
           borderTopLeftRadius: 20,
@@ -560,17 +605,25 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
           </div>
         </div>
 
-        {/* sheet body (only when open) */}
-        {vm.sheetOpen && (
+        {/* sheet body (kept mounted; the 0fr↔1fr grid row animates open/close) */}
+        <div
+          inert={!vm.sheetOpen}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            display: 'grid',
+            gridTemplateRows: vm.sheetOpen ? '1fr' : '0fr',
+            transition: 'grid-template-rows .3s ease'
+          }}
+        >
           <div
             style={{
-              flex: 1,
               minHeight: 0,
               overflow: 'hidden',
-              padding: '16px 18px 18px',
+              padding: vm.sheetOpen ? '16px 18px 18px' : '0 18px',
+              transition: 'padding .3s ease',
               display: 'flex',
-              flexDirection: 'column',
-              animation: 'slideup .28s ease'
+              flexDirection: 'column'
             }}
           >
             {vm.notDone && vm.statement ? (
@@ -620,7 +673,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
               <DoneBlock s={s} />
             )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

@@ -147,7 +147,6 @@ const s: Translations = {
   v2VotingProgress: "Voting progress",
   v2RemainingCount: "{{n}} left",
   v2VoteCta: "Vote",
-  v2CtaHint: "Tap to bring up statements from below",
   v2AllAnsweredTitle: "You’ve answered every statement",
   v2AllAnsweredBody: "When new statements are added, you’ll be able to answer again.",
   v2OpinionGroupsDesc:
@@ -170,7 +169,6 @@ const s: Translations = {
     "Amazon’s “recommended products” and Netflix’s “recommended movies” use statistics to group users who buy or watch similar things, then show what other users in the same group are buying or watching.\n\n" +
     "Pol.is works the same way. The groups below are made up of people with similar opinions. Click a group to see what characterizes it.",
   v2VotePrompt: "Q. What do you think of this statement?",
-  v2VoteClose: "Close card",
   v2ConsensusTitle: "Shared opinions",
   v2ConsensusSubtitle: "Statements where opinion aligned across groups.",
   v2ConsensusCenterAgree: "agree",

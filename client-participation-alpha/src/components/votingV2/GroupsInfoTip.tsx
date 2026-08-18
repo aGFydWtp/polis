@@ -11,8 +11,8 @@ const GTIP_CSS = `
 
 /**
  * The ⓘ icon next to the "opinion groups" title, with the explanation tooltip
- * on hover/focus (tap on touch devices). Shared by DesktopDock and
- * MobileBottomSheet; includes its own styles.
+ * on hover/focus (tap on touch devices). Used by MobileBottomSheet; includes
+ * its own styles.
  */
 export default function GroupsInfoTip({ s }: { s: Translations }) {
   return (

@@ -92,7 +92,6 @@ s.v2HeroTagline = "Polis - みんなの意見から、次の一歩を考える�
 s.v2VotingProgress = "投票の進捗"
 s.v2RemainingCount = "残り {{n}} 問"
 s.v2VoteCta = "意見を投票する"
-s.v2CtaHint = "タップすると下から意見が表示されます"
 s.v2AllAnsweredTitle = "すべての意見に回答しました"
 s.v2AllAnsweredBody = "新しい意見が追加されると、また回答できるようになります。"
 s.v2OpinionGroupsDesc = "意見を投票すると、あなたがグループのどこに位置づけられるか表示されます。"
@@ -114,7 +113,6 @@ s.v2GroupsTooltip =
   "Amazonの「お勧めの商品」、Netflixの「お勧めの映画」は、統計を使用して、類似のものを購入したり視聴しているユーザをグループ化し、同じグループの他のユーザが購入または視聴しているものを表示します。\n\n" +
   "Pol.isでも同様です。グループは以下で確認でき、似たような意見を持つ人々で構成されています。グループをクリックすると、何がそのグループの特徴となっているのかがわかります。"
 s.v2VotePrompt = "Q. この意見に、あなたはどう思いますか？"
-s.v2VoteClose = "カードを閉じる"
 s.v2ConsensusTitle = "みんなの共通意見"
 s.v2ConsensusSubtitle = "グループを越えて賛否が一致した意見です。"
 s.v2ConsensusCenterAgree = "が賛成"

@@ -92,7 +92,6 @@ export interface Translations {
   v2VotingProgress: string
   v2RemainingCount: string
   v2VoteCta: string
-  v2CtaHint: string
   v2AllAnsweredTitle: string
   v2AllAnsweredBody: string
   v2OpinionGroupsDesc: string
@@ -112,8 +111,6 @@ export interface Translations {
   v2GroupsTooltip: string
   /** Desktop 5a: prompt above the opinion in the vote panel. */
   v2VotePrompt: string
-  /** Desktop 5a: collapses the vote panel back to progress + CTA. */
-  v2VoteClose: string
   /** Consensus section (6d): heading above the donut cards. */
   v2ConsensusTitle: string
   /** Consensus section (6d): explanatory subtitle under the heading. */
