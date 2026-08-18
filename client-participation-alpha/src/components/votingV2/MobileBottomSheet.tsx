@@ -234,33 +234,35 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
           zIndex: 100
         }}
       />
-      {/* Hero */}
+      {/* Hero — full-width band; content constrained to the main column width */}
       <div style={{ background: INK, color: '#fff', padding: '16px 20px 22px' }}>
-        <div
-          style={{
-            fontSize: 14,
-            letterSpacing: '.08em',
-            fontWeight: 700,
-            color: '#8fa0c4',
-            marginBottom: 6
-          }}
-        >
-          {s.v2HeroTagline}
-        </div>
-        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.35 }}>{topic}</div>
-        {description && (
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div
             style={{
-              fontSize: 16,
-              lineHeight: 1.7,
-              color: '#c3ccdd',
-              marginTop: 8,
-              whiteSpace: 'pre-line'
+              fontSize: 14,
+              letterSpacing: '.08em',
+              fontWeight: 700,
+              color: '#8fa0c4',
+              marginBottom: 6
             }}
           >
-            {description}
+            {s.v2HeroTagline}
           </div>
-        )}
+          <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.35 }}>{topic}</div>
+          {description && (
+            <div
+              style={{
+                fontSize: 16,
+                lineHeight: 1.7,
+                color: '#c3ccdd',
+                marginTop: 8,
+                whiteSpace: 'pre-line'
+              }}
+            >
+              {description}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: '-10px auto 0', padding: '0 18px 26px' }}>
