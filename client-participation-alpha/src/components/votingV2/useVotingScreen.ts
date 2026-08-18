@@ -28,6 +28,24 @@ export interface GroupInfo {
   count: number
 }
 
+/** One representative comment shown on a group's profile card. */
+export interface GroupRepComment {
+  text: string
+  /** Whether the group's votes make this comment representative by agreeing or disagreeing. */
+  stance: 'agree' | 'disagree'
+}
+
+/** One group's representative-comment card data (per-group profile section). */
+export interface GroupProfile {
+  groupId: number
+  /** Display letter (A, B, C, ...) */
+  name: string
+  /** Participant count in this group */
+  count: number
+  /** Top representative comments for this group, ranked. */
+  repComments: GroupRepComment[]
+}
+
 export interface StatChip {
   tid: number
   type: 'agree' | 'disagree'
@@ -267,6 +285,22 @@ export function useVotingScreen({
     [comments]
   )
 
+  // ── Per-group representative-comment profiles (opinion-group cards) ───
+  const groupProfiles: GroupProfile[] = useMemo(() => {
+    const repness = pcaData?.repness
+    if (!repness || !comments) return []
+    return groups.map((g) => {
+      const items = repness[g.groupId.toString()] ?? []
+      const repComments: GroupRepComment[] = []
+      for (const item of items) {
+        if (repComments.length >= 3) break
+        const text = comments.find((c) => c.tid === item.tid)?.txt
+        if (text) repComments.push({ text, stance: item['repful-for'] })
+      }
+      return { groupId: g.groupId, name: g.name, count: g.count, repComments }
+    })
+  }, [groups, pcaData, comments])
+
   const chips: StatChip[] = useMemo(
     () =>
       viz.statements.map((st: StatementWithType, i) => ({
@@ -431,6 +465,7 @@ export function useVotingScreen({
     pcaData,
     viz,
     groups,
+    groupProfiles,
     chips,
     stat,
     consensusItems,

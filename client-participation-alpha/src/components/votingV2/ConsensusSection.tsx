@@ -279,7 +279,7 @@ export default function ConsensusSection({
 
   return (
     <div style={{ marginTop: variant === 'desktop' ? 36 : 28 }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>{s.v2ConsensusTitle}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>{s.v2ConsensusTitle}</div>
       <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 4 }}>
         {s.v2ConsensusSubtitle}
       </div>

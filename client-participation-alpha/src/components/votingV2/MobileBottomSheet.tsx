@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'rea
 import type { Translations } from '../../strings/types'
 import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
+import GroupProfileCards from './GroupProfileCards'
 import GroupsInfoTip from './GroupsInfoTip'
 import OpinionGroupMap from './OpinionGroupMap'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
@@ -354,7 +355,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         {/* Opinion groups */}
         <div style={{ marginTop: 20, marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>{s.opinionGroups}</div>
             <GroupsInfoTip s={s} />
           </div>
           <div style={{ fontSize: 14, lineHeight: 1.6, color: '#8794ad', marginTop: 3 }}>
@@ -435,6 +436,9 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             )}
           </div>
         </div>
+
+        {/* Per-opinion-group representative-comment cards; two-up at desktop widths */}
+        <GroupProfileCards s={s} profiles={vm.groupProfiles} columns={isDesktop ? 2 : 1} />
 
         {/* みんなの共通意見 — cross-group consensus donut cards (6d);
             two-up at desktop widths */}

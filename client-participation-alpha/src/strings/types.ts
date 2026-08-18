@@ -119,4 +119,8 @@ export interface Translations {
   v2ConsensusCenterAgree: string
   /** Consensus section (6d): parenthesized voter-count format, e.g. "({{n}}人)". */
   v2ConsensusCount: string
+  /** Per-group profile card header, e.g. "グループAの代表的な意見". */
+  v2GroupRepOpinionsTitle: string
+  /** Per-group profile card: suffix appended to comments the group predominantly disagreed with. */
+  v2GroupRepDisagreeSuffix: string
 }
