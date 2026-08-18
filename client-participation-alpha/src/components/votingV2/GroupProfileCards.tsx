@@ -29,7 +29,7 @@ function GroupProfileCard({ s, profile }: { s: Translations; profile: GroupProfi
         style={{
           background: '#f1f3f8',
           padding: '14px 16px',
-          fontSize: 15,
+          fontSize: 16,
           fontWeight: 700,
           color: INK
         }}
@@ -46,7 +46,7 @@ function GroupProfileCard({ s, profile }: { s: Translations; profile: GroupProfi
                 border: '1px solid #eef1f6',
                 borderRadius: 13,
                 padding: 14,
-                fontSize: 14,
+                fontSize: 16,
                 lineHeight: 1.7,
                 color: '#25304a'
               }}
