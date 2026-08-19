@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react'
 import type { Translations } from '../../strings/types'
 
 /** Hover/focus tooltip for the opinion-group ⓘ icon (ported from the 5a mock). */
@@ -7,6 +8,9 @@ const GTIP_CSS = `
 .v2gtip:hover>.v2gtipbox,.v2gtip:focus-within>.v2gtipbox{opacity:1;visibility:visible;transform:translateY(0)}
 .v2gtipbox p{margin:0 0 9px}
 .v2gtipbox p:last-child{margin:0}
+@media (max-width:480px){
+.v2gtip>.v2gtipbox{position:fixed;left:16px;right:16px;top:var(--v2gtip-top,50%);width:auto}
+}
 `
 
 /**
@@ -15,6 +19,13 @@ const GTIP_CSS = `
  * its own styles.
  */
 export default function GroupsInfoTip({ s }: { s: Translations }) {
+  // On narrow screens the tooltip switches to position:fixed (see the media
+  // query above), so its top edge must be anchored to the icon's viewport
+  // position at the moment it opens.
+  const place = (e: SyntheticEvent<HTMLSpanElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    e.currentTarget.style.setProperty('--v2gtip-top', `${rect.bottom + 8}px`)
+  }
   return (
     <>
       <style>{GTIP_CSS}</style>
@@ -24,6 +35,8 @@ export default function GroupsInfoTip({ s }: { s: Translations }) {
         role="button"
         aria-label={s.opinionGroups}
         style={{ outline: 'none' }}
+        onMouseEnter={place}
+        onFocus={place}
       >
         <svg
           width="18"
