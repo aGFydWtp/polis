@@ -18,8 +18,8 @@ s.participantHelpWelcomeText =
 // ─────────────────────────────────────────────────────────────
 // Voting
 // ─────────────────────────────────────────────────────────────
-s.agree = "賛成"
-s.disagree = "反対"
+s.agree = "はい"
+s.disagree = "いいえ"
 s.pass = "わからない/どちらでもない"
 
 // ─────────────────────────────────────────────────────────────
@@ -51,12 +51,12 @@ s.comment_123 = "意見："
 s.consensus = "グループを超えた共通の意見"
 s.group_123 = "グループ："
 s.opinionGroups = "意見グループ"
-s.pctAgreedLong = "{{comment_id}} に投票した {{pct}}% の人が賛成しました。"
+s.pctAgreedLong = "{{comment_id}} に投票した {{pct}}% の人が「はい」を選びました。"
 s.pctAgreedOfGroupLong =
-  "グループ {{group}} で意見 {{comment_id}} に投票した人の {{pct}}% が賛成しました。"
-s.pctDisagreedLong = "{{comment_id}} に投票した {{pct}}% の人が反対しました。"
+  "グループ {{group}} で意見 {{comment_id}} に投票した人の {{pct}}% が「はい」を選びました。"
+s.pctDisagreedLong = "{{comment_id}} に投票した {{pct}}% の人が「いいえ」を選びました。"
 s.pctDisagreedOfGroupLong =
-  "グループ {{group}} で意見 {{comment_id}} に投票した人の {{pct}}% が反対しました。"
+  "グループ {{group}} で意見 {{comment_id}} に投票した人の {{pct}}% が「いいえ」を選びました。"
 
 // ─────────────────────────────────────────────────────────────
 // Topics (Delphi)
@@ -102,8 +102,9 @@ s.v2SelectToReact = "意見を選んで反応を見る"
 s.v2GroupsNotFormed = "グループはまだ形成されていません"
 s.v2PeopleCount = "{{n}}人"
 s.v2StatReaction =
-  "この意見に投票した {{pct}}% の人が「{{stance}}」しました。(わからない/どちらでもない を除く)"
-s.v2StatReactionShort = "投票した {{pct}}% が「{{stance}}」(わからない/どちらでもない を除く)"
+  "この意見に投票した {{pct}}% の人が「{{stance}}」を選びました。(わからない/どちらでもない を除く)"
+s.v2StatReactionShort =
+  "投票した {{pct}}% が「{{stance}}」を選択 (わからない/どちらでもない を除く)"
 s.v2VotingInProgress = "投票中（残り {{n}} 問）"
 s.v2AllAnsweredShort = "すべて回答済み"
 s.v2Pull = "引き出す"
@@ -112,16 +113,16 @@ s.v2GroupsTooltip =
   "意見が似ている人はグループにまとめられます。グループをクリックすると、そこの人の視点になれます。\n\n" +
   "Amazonの「お勧めの商品」、Netflixの「お勧めの映画」は、統計を使用して、類似のものを購入したり視聴しているユーザをグループ化し、同じグループの他のユーザが購入または視聴しているものを表示します。\n\n" +
   "Pol.isでも同様です。グループは以下で確認でき、似たような意見を持つ人々で構成されています。グループをクリックすると、何がそのグループの特徴となっているのかがわかります。"
-s.v2VotePrompt = "Q. この意見に、あなたはどう思いますか？"
+s.v2VotePrompt = "Q. この意見に、あなたは同意しますか？"
 s.v2ConsensusTitle = "みんなの共通意見"
-s.v2ConsensusSubtitle = "グループを越えて賛否が一致した意見です。"
-s.v2ConsensusCenterAgree = "が賛成"
-s.v2ConsensusCenterDisagree = "が反対"
+s.v2ConsensusSubtitle = "グループを越えて回答が一致した意見です。"
+s.v2ConsensusCenterAgree = "「はい」"
+s.v2ConsensusCenterDisagree = "「いいえ」"
 s.v2ConsensusCount = "({{n}}人)"
 s.v2GroupRepOpinionsTitle = "グループ{{name}}を特徴づける意見"
-s.v2GroupRepDisagreeSuffix = "に反対"
+s.v2GroupRepDisagreeSuffix = "→「いいえ」"
 s.v2YouBubble = "あなた"
 s.v2GroupAgreedTitle = "グループ{{name}}で同意されている意見"
-s.v2GroupAgreedSubtitle = "グループ{{name}}内で賛成または反対が多数だった意見です。"
+s.v2GroupAgreedSubtitle = "グループ{{name}}内で「はい」または「いいえ」が多数だった意見です。"
 
 export default s
