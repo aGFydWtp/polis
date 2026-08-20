@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
-import { useConversationPath } from './useConversationPath'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -11,6 +10,8 @@ type VM = ReturnType<typeof useVotingScreen>
 interface VotingLayoutProps {
   s: Translations
   conversation_id: string
+  /** Mount point of this app (`/alpha` behind nginx, `''` at the root) */
+  basePath: string
   topic: string
   description: string
   /** vis_type === 1 — gates the "see everyone's opinions" link in the done card */
@@ -190,16 +191,11 @@ const VIZ_LINK_CSS =
   '.v2viz-link{text-decoration:underline;transition:color .15s ease}' +
   '.v2viz-link:hover,.v2viz-link:focus-visible{color:#000}'
 
-function VisualizationLink({ s, conversation_id }: { s: Translations; conversation_id: string }) {
-  const href = useConversationPath(conversation_id, '/visualization')
+function VisualizationLink({ s, href }: { s: Translations; href: string }) {
   return (
     <div style={{ maxWidth: 600, margin: '10px auto 0', textAlign: 'right' }}>
       <style>{VIZ_LINK_CSS}</style>
-      <a
-        className="v2viz-link"
-        href={href}
-        style={{ fontSize: 16, color: INK }}
-      >
+      <a className="v2viz-link" href={href} style={{ fontSize: 16, color: INK }}>
         {s.v2ViewEveryonesOpinions}
         {' \u2192'}
       </a>
@@ -228,14 +224,13 @@ function ArrowRightIcon() {
 
 function DoneBlock({
   s,
-  conversation_id,
+  href,
   visualizationEnabled
 }: {
   s: Translations
-  conversation_id: string
+  href: string
   visualizationEnabled: boolean
 }) {
-  const href = useConversationPath(conversation_id, '/visualization')
   return (
     <div
       style={{
@@ -285,11 +280,13 @@ function DoneBlock({
 export default function VotingLayout({
   s,
   conversation_id,
+  basePath,
   topic,
   description,
   visualizationEnabled,
   vm
 }: VotingLayoutProps) {
+  const visualizationHref = `${basePath}/${conversation_id}/visualization`
   return (
     <div
       style={{
@@ -392,19 +389,13 @@ export default function VotingLayout({
           {vm.notDone ? (
             <VoteBlock s={s} vm={vm} />
           ) : vm.allDone ? (
-            <DoneBlock
-              s={s}
-              conversation_id={conversation_id}
-              visualizationEnabled={visualizationEnabled}
-            />
+            <DoneBlock s={s} href={visualizationHref} visualizationEnabled={visualizationEnabled} />
           ) : null}
         </div>
 
         {/* Offered alongside voting; once everything is answered the done card's
             button takes over. */}
-        {visualizationEnabled && vm.notDone && (
-          <VisualizationLink s={s} conversation_id={conversation_id} />
-        )}
+        {visualizationEnabled && vm.notDone && <VisualizationLink s={s} href={visualizationHref} />}
       </div>
     </div>
   )

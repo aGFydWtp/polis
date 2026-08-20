@@ -11,6 +11,8 @@ interface VotingScreenProps {
   initialStatement?: StatementData
   /** vis_type from the conversation; the visualization link only shows when === 1 */
   visType?: number
+  /** Mount point of this app (`/alpha` behind nginx, `''` at the root) */
+  basePath?: string
 }
 
 /**
@@ -24,7 +26,8 @@ export default function VotingScreen({
   topic,
   description,
   initialStatement,
-  visType
+  visType,
+  basePath = ''
 }: VotingScreenProps) {
   const vm = useVotingScreen({ conversation_id, initialStatement, s })
 
@@ -32,6 +35,7 @@ export default function VotingScreen({
     <VotingLayout
       s={s}
       conversation_id={conversation_id}
+      basePath={basePath}
       topic={topic}
       description={description}
       visualizationEnabled={visType === 1}

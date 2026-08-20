@@ -5,6 +5,7 @@ import VisualizationScreen from '../../components/votingV2/VisualizationScreen'
 import Layout from '../layouts/Layout.astro'
 import { getTranslations } from '../../strings/strings'
 import { uiLanguageSSR } from '../../lib/lang'
+import { resolveBasePath } from '../../utils/basePath'
 
 const { conversation_id } = Astro.params;
 
@@ -40,6 +41,7 @@ try {
 }
 
 const topic = initialData?.conversation.topic ?? '';
+const basePath = resolveBasePath(Astro.request.headers);
 ---
 <Layout
   title={topic || 'Loading Conversation...'}
@@ -84,6 +86,7 @@ const topic = initialData?.conversation.topic ?? '';
       s={s}
       topic={topic}
       visType={initialData.conversation.vis_type}
+      basePath={basePath}
     />
   )}
 </Layout>

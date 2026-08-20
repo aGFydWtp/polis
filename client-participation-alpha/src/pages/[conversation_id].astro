@@ -17,6 +17,7 @@ import Layout from '../pages/layouts/Layout.astro'
 import { getTranslations } from '../strings/strings'
 import type { Translations } from '../strings/types'
 import { uiLanguageSSR } from '../lib/lang'
+import { resolveBasePath } from '../utils/basePath'
 
 const { conversation_id } = Astro.params;
 
@@ -114,6 +115,7 @@ if (initialData) {
 }
 
 const hideHeader = Astro.url.searchParams.get('hide_header');
+const basePath = resolveBasePath(Astro.request.headers);
 const uiV2 = Astro.url.searchParams.get('ui') !== 'v1';
 ---
 <Layout
@@ -159,6 +161,7 @@ const uiV2 = Astro.url.searchParams.get('ui') !== 'v1';
       description={surveyDetails?.description ?? ''}
       initialStatement={firstStatement}
       visType={initialData.conversation.vis_type}
+      basePath={basePath}
     />
   ) : (
   <div class="container">

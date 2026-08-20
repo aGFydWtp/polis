@@ -1,6 +1,5 @@
 import type { Translations } from '../../strings/types'
 import OpinionGroupsSection from './OpinionGroupsSection'
-import { useConversationPath } from './useConversationPath'
 import { useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -30,6 +29,8 @@ interface VisualizationScreenProps {
   topic: string
   /** vis_type from the conversation; opinion groups only render when === 1 */
   visType?: number
+  /** Mount point of this app (`/alpha` behind nginx, `''` at the root) */
+  basePath?: string
 }
 
 /**
@@ -41,10 +42,11 @@ export default function VisualizationScreen({
   conversation_id,
   s,
   topic,
-  visType
+  visType,
+  basePath = ''
 }: VisualizationScreenProps) {
   const vm = useVotingScreen({ conversation_id, visType, s, votingEnabled: false })
-  const backHref = useConversationPath(conversation_id)
+  const backHref = `${basePath}/${conversation_id}`
 
   return (
     <div
