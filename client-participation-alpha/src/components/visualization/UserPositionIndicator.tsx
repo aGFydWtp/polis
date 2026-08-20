@@ -1,6 +1,7 @@
 import { Group } from '@visx/group'
 import { motion } from 'motion/react'
 import type { UserPosition } from './types'
+import { useAssetUrl } from '../BasePathContext'
 
 interface UserPositionIndicatorProps {
   userPosition: UserPosition
@@ -25,6 +26,7 @@ function estimateTextWidth(label: string): number {
 }
 
 export function UserPositionIndicator({ userPosition, label }: UserPositionIndicatorProps) {
+  const avatarUrl = useAssetUrl('anonProfile.svg')
   const bubbleWidth = Math.ceil(estimateTextWidth(label)) + BUBBLE_PADDING_X * 2
 
   // Flip the bubble below the marker when it would be clipped by the top edge
@@ -53,7 +55,7 @@ export function UserPositionIndicator({ userPosition, label }: UserPositionIndic
             width="1"
             height="1"
             // Use a relative URL so it works when app is mounted at /alpha/ behind nginx
-            xlinkHref="anonProfile.svg"
+            xlinkHref={avatarUrl}
             preserveAspectRatio="xMidYMid slice"
           />
         </pattern>

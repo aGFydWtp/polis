@@ -1,4 +1,5 @@
 import type { Translations } from '../../strings/types'
+import { BasePathContext } from '../BasePathContext'
 import OpinionGroupsSection from './OpinionGroupsSection'
 import { useVotingScreen } from './useVotingScreen'
 
@@ -49,77 +50,79 @@ export default function VisualizationScreen({
   const backHref = `${basePath}/${conversation_id}`
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '100%',
-        background: '#eef1f6',
-        minHeight: '100vh'
-      }}
-    >
-      {/* Paints the iOS status-bar safe area dark (theme-color alone doesn't tint
-          it when the address bar sits at the bottom). Zero height off-notch. */}
+    <BasePathContext.Provider value={basePath}>
       <div
-        aria-hidden="true"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 'env(safe-area-inset-top)',
-          background: INK,
-          zIndex: 100
+          position: 'relative',
+          width: '100%',
+          background: '#eef1f6',
+          minHeight: '100vh'
         }}
-      />
-      {/* Header — full-width band; content constrained to the main column width */}
-      <div style={{ background: INK, color: '#fff', padding: '14px 20px' }}>
+      >
+        {/* Paints the iOS status-bar safe area dark (theme-color alone doesn't tint
+          it when the address bar sits at the bottom). Zero height off-notch. */}
         <div
+          aria-hidden="true"
           style={{
-            maxWidth: 1000,
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 'env(safe-area-inset-top)',
+            background: INK,
+            zIndex: 100
           }}
-        >
-          <a
-            href={backHref}
-            aria-label={s.v2VisualizationBack}
+        />
+        {/* Header — full-width band; content constrained to the main column width */}
+        <div style={{ background: INK, color: '#fff', padding: '14px 20px' }}>
+          <div
             style={{
-              flex: 'none',
+              maxWidth: 1000,
+              margin: '0 auto',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              color: '#fff',
-              background: 'rgba(255,255,255,.12)',
-              border: '1px solid rgba(255,255,255,.22)'
+              gap: 14
             }}
           >
-            <ArrowLeftIcon />
-          </a>
-          <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.4, minWidth: 0 }}>
-            {s.v2VisualizationTitle}
+            <a
+              href={backHref}
+              aria-label={s.v2VisualizationBack}
+              style={{
+                flex: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                color: '#fff',
+                background: 'rgba(255,255,255,.12)',
+                border: '1px solid rgba(255,255,255,.22)'
+              }}
+            >
+              <ArrowLeftIcon />
+            </a>
+            <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.4, minWidth: 0 }}>
+              {s.v2VisualizationTitle}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 18px 26px' }}>
-        <h1
-          style={{
-            fontSize: 24,
-            fontWeight: 700,
-            lineHeight: 1.4,
-            color: INK,
-            margin: '22px 0 0'
-          }}
-        >
-          {topic}
-        </h1>
-        <OpinionGroupsSection s={s} vm={vm} />
+        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 18px 26px' }}>
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              lineHeight: 1.4,
+              color: INK,
+              margin: '22px 0 0'
+            }}
+          >
+            {topic}
+          </h1>
+          <OpinionGroupsSection s={s} vm={vm} />
+        </div>
       </div>
-    </div>
+    </BasePathContext.Provider>
   )
 }
