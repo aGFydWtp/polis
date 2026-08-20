@@ -74,11 +74,12 @@ export default function VisualizationScreen({
           }}
         />
         {/* Header — full-width band; content constrained to the main column width */}
-        <div style={{ background: INK, color: '#fff', padding: '14px 20px' }}>
+        <div style={{ background: INK, color: '#fff', padding: '14px 0' }}>
           <div
             style={{
               maxWidth: 1000,
               margin: '0 auto',
+              padding: '0 18px',
               display: 'flex',
               alignItems: 'center',
               gap: 14
