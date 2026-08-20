@@ -9,7 +9,7 @@ interface VotingScreenProps {
   topic: string
   description: string
   initialStatement?: StatementData
-  /** vis_type from the conversation; opinion groups only render when === 1 */
+  /** vis_type from the conversation; the visualization link only shows when === 1 */
   visType?: number
 }
 
@@ -26,7 +26,7 @@ export default function VotingScreen({
   initialStatement,
   visType
 }: VotingScreenProps) {
-  const vm = useVotingScreen({ conversation_id, initialStatement, visType, s })
+  const vm = useVotingScreen({ conversation_id, initialStatement, s })
 
   return (
     <VotingLayout
@@ -34,6 +34,7 @@ export default function VotingScreen({
       conversation_id={conversation_id}
       topic={topic}
       description={description}
+      visualizationEnabled={visType === 1}
       vm={vm}
     />
   )

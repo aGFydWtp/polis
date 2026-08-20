@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
-import OpinionGroupsSection from './OpinionGroupsSection'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -13,6 +12,8 @@ interface VotingLayoutProps {
   conversation_id: string
   topic: string
   description: string
+  /** vis_type === 1 — gates the "see everyone's opinions" link in the done card */
+  visualizationEnabled: boolean
   vm: VM
 }
 
@@ -202,7 +203,15 @@ function ArrowRightIcon() {
   )
 }
 
-function DoneBlock({ s, conversation_id }: { s: Translations; conversation_id: string }) {
+function DoneBlock({
+  s,
+  conversation_id,
+  visualizationEnabled
+}: {
+  s: Translations
+  conversation_id: string
+  visualizationEnabled: boolean
+}) {
   return (
     <div
       style={{
@@ -219,28 +228,32 @@ function DoneBlock({ s, conversation_id }: { s: Translations; conversation_id: s
       <div style={{ fontSize: 14, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
         {s.v2AllAnsweredBody}
       </div>
-      <style>{DONE_CTA_CSS}</style>
-      <a
-        className="v2done-cta"
-        href={`/${conversation_id}/visualization`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 7,
-          marginTop: 14,
-          padding: '13px 16px',
-          borderRadius: 14,
-          background: '#1f7a4d',
-          color: '#fff',
-          fontSize: 15,
-          fontWeight: 700,
-          boxShadow: '0 1px 2px 0 rgba(0,0,0,.04)'
-        }}
-      >
-        {s.v2ViewEveryonesOpinions}
-        <ArrowRightIcon />
-      </a>
+      {visualizationEnabled && (
+        <>
+          <style>{DONE_CTA_CSS}</style>
+          <a
+            className="v2done-cta"
+            href={`/${conversation_id}/visualization`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+              marginTop: 14,
+              padding: '13px 16px',
+              borderRadius: 14,
+              background: '#1f7a4d',
+              color: '#fff',
+              fontSize: 15,
+              fontWeight: 700,
+              boxShadow: '0 1px 2px 0 rgba(0,0,0,.04)'
+            }}
+          >
+            {s.v2ViewEveryonesOpinions}
+            <ArrowRightIcon />
+          </a>
+        </>
+      )}
     </div>
   )
 }
@@ -250,6 +263,7 @@ export default function VotingLayout({
   conversation_id,
   topic,
   description,
+  visualizationEnabled,
   vm
 }: VotingLayoutProps) {
   return (
@@ -354,12 +368,13 @@ export default function VotingLayout({
           {vm.notDone ? (
             <VoteBlock s={s} vm={vm} />
           ) : vm.allDone ? (
-            <DoneBlock s={s} conversation_id={conversation_id} />
+            <DoneBlock
+              s={s}
+              conversation_id={conversation_id}
+              visualizationEnabled={visualizationEnabled}
+            />
           ) : null}
         </div>
-
-        {/* Opinion groups map + group data cards (shared with /:id/visualization) */}
-        <OpinionGroupsSection s={s} vm={vm} />
       </div>
     </div>
   )
