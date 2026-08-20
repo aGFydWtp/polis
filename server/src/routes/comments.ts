@@ -566,12 +566,12 @@ async function handle_POST_comments(req: RequestWithP, res: any) {
     const comment = insertedComment[0];
     const tid = comment.tid;
 
-    // 7. Handle voting on the comment if specified
-    const shouldDefaultVote = req.p.is_seed && _.isUndefined(vote);
-    const finalVote = shouldDefaultVote ? 0 : vote;
-
-    if (!_.isUndefined(finalVote)) {
-      await votesPost(uid, pid, zid, tid, finalVote, 0, false);
+    // 7. Handle voting on the comment if specified.
+    // Seed comments get no implicit vote: a moderator may deliberately seed a
+    // statement they disagree with, so authoring one says nothing about their
+    // position. Only vote when the caller asked for it.
+    if (!_.isUndefined(vote)) {
+      await votesPost(uid, pid, zid, tid, vote, 0, false);
     }
 
     // 8. Handle moderation notifications
@@ -605,7 +605,7 @@ async function handle_POST_comments(req: RequestWithP, res: any) {
     setTimeout(() => {
       updateConversationModifiedTime(zid, new Date(createdTimeMillis));
       updateLastInteractionTimeForConversation(zid, uid);
-      if (!_.isUndefined(finalVote)) {
+      if (!_.isUndefined(vote)) {
         updateVoteCount(zid, pid);
       }
     }, 100);
@@ -998,15 +998,6 @@ async function handle_POST_comments_bulk(
 
         if (createdTime > lastInteractionTime) {
           lastInteractionTime = createdTime;
-        }
-
-        // Handle default vote for seed comments (matching handle_POST_comments behavior)
-        if (is_seed) {
-          await votesPost(uid!, finalPid, zid!, tid, 0, 0, false);
-          // Schedule vote count update
-          setTimeout(() => {
-            updateVoteCount(zid!, finalPid);
-          }, 100);
         }
 
         if (!active) {
