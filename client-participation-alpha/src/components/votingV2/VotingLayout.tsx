@@ -171,7 +171,7 @@ function VoteBlock({ s, vm }: { s: Translations; vm: VM }) {
       >
         {s.v2VotePrompt}
       </div>
-      <div style={{ fontSize: 18, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}>
+      <div style={{ fontSize: 20, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}>
         {vm.statement.txt}
       </div>
       <VoteButtons s={s} vm={vm} />
