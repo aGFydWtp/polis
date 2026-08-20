@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
+import { useConversationPath } from './useConversationPath'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -190,12 +191,13 @@ const VIZ_LINK_CSS =
   '.v2viz-link:hover,.v2viz-link:focus-visible{color:#000}'
 
 function VisualizationLink({ s, conversation_id }: { s: Translations; conversation_id: string }) {
+  const href = useConversationPath(conversation_id, '/visualization')
   return (
     <div style={{ maxWidth: 600, margin: '10px auto 0', textAlign: 'right' }}>
       <style>{VIZ_LINK_CSS}</style>
       <a
         className="v2viz-link"
-        href={`/${conversation_id}/visualization`}
+        href={href}
         style={{ fontSize: 16, color: INK }}
       >
         {s.v2ViewEveryonesOpinions}
@@ -233,6 +235,7 @@ function DoneBlock({
   conversation_id: string
   visualizationEnabled: boolean
 }) {
+  const href = useConversationPath(conversation_id, '/visualization')
   return (
     <div
       style={{
@@ -254,7 +257,7 @@ function DoneBlock({
           <style>{DONE_CTA_CSS}</style>
           <a
             className="v2done-cta"
-            href={`/${conversation_id}/visualization`}
+            href={href}
             style={{
               display: 'flex',
               alignItems: 'center',

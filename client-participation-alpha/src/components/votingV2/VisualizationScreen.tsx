@@ -1,5 +1,6 @@
 import type { Translations } from '../../strings/types'
 import OpinionGroupsSection from './OpinionGroupsSection'
+import { useConversationPath } from './useConversationPath'
 import { useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -43,6 +44,7 @@ export default function VisualizationScreen({
   visType
 }: VisualizationScreenProps) {
   const vm = useVotingScreen({ conversation_id, visType, s, votingEnabled: false })
+  const backHref = useConversationPath(conversation_id)
 
   return (
     <div
@@ -79,7 +81,7 @@ export default function VisualizationScreen({
           }}
         >
           <a
-            href={`/${conversation_id}`}
+            href={backHref}
             aria-label={s.v2VisualizationBack}
             style={{
               flex: 'none',
