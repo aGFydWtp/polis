@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import ConsensusSection from './ConsensusSection'
 import GroupControls, { StatCard } from './GroupControls'
@@ -30,15 +30,7 @@ function useIsDesktop(): boolean {
 
 type VM = ReturnType<typeof useVotingScreen>
 
-/** Activates a click handler on Enter/Space for keyboard accessibility. */
-const activateOnKey = (fn: () => void) => (e: KeyboardEvent) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault()
-    fn()
-  }
-}
-
-interface MobileBottomSheetProps {
+interface VotingLayoutProps {
   s: Translations
   topic: string
   description: string
@@ -183,30 +175,53 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
   )
 }
 
-function DoneBlock({ s }: { s: Translations }) {
+/** The statement being voted on, inline inside the progress card. */
+function VoteBlock({ s, vm }: { s: Translations; vm: VM }) {
+  if (!vm.statement) return null
   return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        textAlign: 'center',
-        gap: 9,
-        padding: 16
-      }}
-    >
-      <div style={{ fontSize: 38, lineHeight: 1 }}>🎉</div>
-      <div style={{ fontSize: 16.5, fontWeight: 700, color: '#1f7a4d' }}>
-        {s.v2AllAnsweredTitle}
+    <div style={{ borderTop: '1px solid #eef1f6', paddingTop: 14 }}>
+      <div
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: INK,
+          lineHeight: 1.6,
+          marginBottom: 10
+        }}
+      >
+        {s.v2VotePrompt}
       </div>
-      <div style={{ fontSize: 14, lineHeight: 1.75, color: '#5a7a68' }}>{s.v2AllAnsweredBody}</div>
+      <div style={{ fontSize: 18, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}>
+        {vm.statement.txt}
+      </div>
+      <VoteButtons s={s} vm={vm} />
     </div>
   )
 }
 
-export default function MobileBottomSheet({ s, topic, description, vm }: MobileBottomSheetProps) {
+function DoneBlock({ s }: { s: Translations }) {
+  return (
+    <div
+      style={{
+        padding: 16,
+        borderRadius: 14,
+        background: '#eef8f2',
+        border: '1px solid #cfe9db',
+        textAlign: 'center'
+      }}
+    >
+      <div style={{ fontSize: 30, lineHeight: 1 }}>🎉</div>
+      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1f7a4d', marginTop: 8 }}>
+        {s.v2AllAnsweredTitle}
+      </div>
+      <div style={{ fontSize: 14, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
+        {s.v2AllAnsweredBody}
+      </div>
+    </div>
+  )
+}
+
+export default function VotingLayout({ s, topic, description, vm }: VotingLayoutProps) {
   const showMap = vm.groupsEnabled && vm.hasPca
   const isDesktop = useIsDesktop()
 
@@ -216,8 +231,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
         position: 'relative',
         width: '100%',
         background: '#eef1f6',
-        minHeight: '100vh',
-        paddingBottom: 80
+        minHeight: '100vh'
       }}
     >
       {/* Paints the iOS status-bar safe area dark (theme-color alone doesn't tint
@@ -266,7 +280,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
       </div>
 
       <div style={{ maxWidth: 1000, margin: '-10px auto 0', padding: '0 18px 26px' }}>
-        {/* Progress + CTA */}
+        {/* Progress + the current statement, voted on in place */}
         <div
           style={{
             maxWidth: 600,
@@ -310,48 +324,7 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             />
           </div>
 
-          {vm.notDone ? (
-            <button
-              onClick={vm.openSheet}
-              style={{
-                width: '100%',
-                padding: 15,
-                border: 'none',
-                borderRadius: 14,
-                background: INDIGO,
-                color: '#fff',
-                fontFamily: 'inherit',
-                fontSize: 15.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 9,
-                boxShadow: '0 10px 22px -10px rgba(59,91,219,.7)'
-              }}
-            >
-              {s.v2VoteCta}
-            </button>
-          ) : vm.allDone ? (
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 14,
-                background: '#eef8f2',
-                border: '1px solid #cfe9db',
-                textAlign: 'center'
-              }}
-            >
-              <div style={{ fontSize: 30, lineHeight: 1 }}>🎉</div>
-              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1f7a4d', marginTop: 8 }}>
-                {s.v2AllAnsweredTitle}
-              </div>
-              <div style={{ fontSize: 14, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
-                {s.v2AllAnsweredBody}
-              </div>
-            </div>
-          ) : null}
+          {vm.notDone ? <VoteBlock s={s} vm={vm} /> : vm.allDone ? <DoneBlock s={s} /> : null}
         </div>
 
         {/* Opinion groups */}
@@ -466,236 +439,6 @@ export default function MobileBottomSheet({ s, topic, description, vm }: MobileB
             highlightDominant
           />
         ))}
-      </div>
-
-      {/* Dim overlay when open (kept mounted so the fade animates both ways) */}
-      <div
-        role="button"
-        tabIndex={vm.sheetOpen ? 0 : -1}
-        aria-label={s.v2Close}
-        aria-hidden={!vm.sheetOpen}
-        onClick={vm.closeSheet}
-        onKeyDown={activateOnKey(vm.closeSheet)}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15,20,35,.32)',
-          zIndex: 15,
-          opacity: vm.sheetOpen ? 1 : 0,
-          pointerEvents: vm.sheetOpen ? 'auto' : 'none',
-          transition: 'opacity .3s ease'
-        }}
-      />
-
-      {/* Bottom sheet */}
-      <div
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          maxWidth: 600,
-          margin: '0 auto',
-          zIndex: 20,
-          background: '#fff',
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          boxShadow: '0 -8px 30px rgba(20,24,40,.18)',
-          display: 'flex',
-          flexDirection: 'column',
-          maxHeight: '80vh'
-        }}
-      >
-        {/* handle / tab header (tap to toggle) */}
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label={vm.sheetOpen ? s.v2Close : s.v2Pull}
-          onClick={vm.toggleSheet}
-          onKeyDown={activateOnKey(vm.toggleSheet)}
-          style={{
-            flex: 'none',
-            cursor: 'pointer',
-            padding: '10px 18px 12px',
-            borderBottom: '1px solid #eef1f6'
-          }}
-        >
-          <div
-            style={{
-              width: 40,
-              height: 5,
-              borderRadius: 3,
-              background: '#d6dbe4',
-              margin: '0 auto 10px'
-            }}
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            {vm.allDone ? (
-              <span
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#1f7a4d'
-                }}
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-                {s.v2AllAnsweredShort}
-              </span>
-            ) : vm.sheetOpen ? (
-              <span style={{ fontSize: 14, fontWeight: 700, color: INK }}>
-                {s.v2RemainingCount.replace('{{n}}', String(vm.remaining ?? '—'))}
-              </span>
-            ) : (
-              <span
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: INK
-                }}
-              >
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: INDIGO,
-                    flex: 'none'
-                  }}
-                />
-                {s.v2VotingInProgress.replace('{{n}}', String(vm.remaining ?? '—'))}
-              </span>
-            )}
-            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: vm.sheetOpen ? '#9aa2b1' : INDIGO
-                }}
-              >
-                {vm.sheetOpen ? s.v2Close : s.v2Pull}
-              </span>
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 9,
-                  background: '#f1f3f8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#5a6272'
-                }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    transform: vm.sheetOpen ? 'rotate(180deg)' : 'none',
-                    transition: 'transform .3s ease'
-                  }}
-                  aria-hidden="true"
-                >
-                  <path d="m6 15 6-6 6 6" />
-                </svg>
-              </span>
-            </span>
-          </div>
-        </div>
-
-        {/* sheet body (kept mounted; the 0fr↔1fr grid row animates open/close) */}
-        <div
-          inert={!vm.sheetOpen}
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'grid',
-            gridTemplateRows: vm.sheetOpen ? '1fr' : '0fr',
-            transition: 'grid-template-rows .3s ease'
-          }}
-        >
-          <div
-            style={{
-              minHeight: 0,
-              overflow: 'hidden',
-              padding: vm.sheetOpen ? '16px 18px 18px' : '0 18px',
-              transition: 'padding .3s ease',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {vm.notDone && vm.statement ? (
-              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                <div
-                  style={{
-                    flex: 'none',
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: '#1f2a44',
-                    lineHeight: 1.6,
-                    marginBottom: 12
-                  }}
-                >
-                  {s.v2VotePrompt}
-                </div>
-                <div style={{ flex: 1, minHeight: 96, position: 'relative', margin: '0 -2px 2px' }}>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      overflow: 'auto',
-                      padding: '0 2px 20px'
-                    }}
-                  >
-                    <div
-                      style={{ fontSize: 18, lineHeight: 1.8, color: '#25304a', fontWeight: 500 }}
-                    >
-                      {vm.statement.txt}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      height: 28,
-                      background: 'linear-gradient(to top,#fff 20%,rgba(255,255,255,0))',
-                      pointerEvents: 'none'
-                    }}
-                  />
-                </div>
-                <VoteButtons s={s} vm={vm} />
-              </div>
-            ) : (
-              <DoneBlock s={s} />
-            )}
-          </div>
-        </div>
       </div>
     </div>
   )

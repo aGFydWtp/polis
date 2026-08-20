@@ -1,6 +1,6 @@
 import type { Translations } from '../../strings/types'
 import type { StatementData } from '../types'
-import MobileBottomSheet from './MobileBottomSheet'
+import VotingLayout from './VotingLayout'
 import { useVotingScreen } from './useVotingScreen'
 
 interface VotingScreenProps {
@@ -15,7 +15,8 @@ interface VotingScreenProps {
 
 /**
  * Entry point for the voting screen v2 (?ui=v2). Owns the shared voting state
- * hook and renders the bottom-sheet (3c) layout on all viewports.
+ * hook and renders the single-column layout, where the current statement is
+ * voted on inline in the progress card.
  */
 export default function VotingScreen({
   conversation_id,
@@ -27,5 +28,5 @@ export default function VotingScreen({
 }: VotingScreenProps) {
   const vm = useVotingScreen({ conversation_id, initialStatement, visType, s })
 
-  return <MobileBottomSheet s={s} topic={topic} description={description} vm={vm} />
+  return <VotingLayout s={s} topic={topic} description={description} vm={vm} />
 }

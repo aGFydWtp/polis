@@ -143,9 +143,6 @@ export function useVotingScreen({
   // Distinguish "still loading first comment" from "genuinely done".
   const [hasLoadedFirst, setHasLoadedFirst] = useState<boolean>(!!initialStatement)
 
-  // ── Sheet / dock open state ───────────────────────────────────
-  const [sheetOpen, setSheetOpen] = useState(false)
-
   // ── PCA / map state ───────────────────────────────────────────
   const [pcaData, setPcaData] = useState<PCAData | null>(null)
   const [comments, setComments] = useState<Comment[] | null>(null)
@@ -459,11 +456,6 @@ export function useVotingScreen({
     [isConsensusSelected, selectedGroup]
   )
 
-  // ── Sheet controls ────────────────────────────────────────────
-  const openSheet = useCallback(() => setSheetOpen(true), [])
-  const closeSheet = useCallback(() => setSheetOpen(false), [])
-  const toggleSheet = useCallback(() => setSheetOpen((v) => !v), [])
-
   // ── Voting ────────────────────────────────────────────────────
   const vote = useCallback(
     async (voteType: number) => {
@@ -518,11 +510,6 @@ export function useVotingScreen({
     isFetchingNext,
     voteError,
     vote,
-    // sheet
-    sheetOpen,
-    openSheet,
-    closeSheet,
-    toggleSheet,
     // groups / map
     groupsEnabled,
     hasPca,
