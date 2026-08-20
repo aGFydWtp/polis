@@ -28,5 +28,13 @@ export default function VotingScreen({
 }: VotingScreenProps) {
   const vm = useVotingScreen({ conversation_id, initialStatement, visType, s })
 
-  return <VotingLayout s={s} topic={topic} description={description} vm={vm} />
+  return (
+    <VotingLayout
+      s={s}
+      conversation_id={conversation_id}
+      topic={topic}
+      description={description}
+      vm={vm}
+    />
+  )
 }

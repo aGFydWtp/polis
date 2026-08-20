@@ -10,6 +10,7 @@ type VM = ReturnType<typeof useVotingScreen>
 
 interface VotingLayoutProps {
   s: Translations
+  conversation_id: string
   topic: string
   description: string
   vm: VM
@@ -177,7 +178,31 @@ function VoteBlock({ s, vm }: { s: Translations; vm: VM }) {
   )
 }
 
-function DoneBlock({ s }: { s: Translations }) {
+/** Hover-darkening for the all-answered CTA (inline styles can't express :hover). */
+const DONE_CTA_CSS =
+  '.v2done-cta{text-decoration:none;transition:background .15s ease}' +
+  '.v2done-cta:hover,.v2done-cta:focus-visible{background:#1a6741}'
+
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <path d="m13 5 7 7-7 7" />
+    </svg>
+  )
+}
+
+function DoneBlock({ s, conversation_id }: { s: Translations; conversation_id: string }) {
   return (
     <div
       style={{
@@ -188,18 +213,45 @@ function DoneBlock({ s }: { s: Translations }) {
         textAlign: 'center'
       }}
     >
-      <div style={{ fontSize: 30, lineHeight: 1 }}>🎉</div>
-      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1f7a4d', marginTop: 8 }}>
+      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#1f7a4d' }}>
         {s.v2AllAnsweredTitle}
       </div>
       <div style={{ fontSize: 14, lineHeight: 1.7, color: '#5a7a68', marginTop: 5 }}>
         {s.v2AllAnsweredBody}
       </div>
+      <style>{DONE_CTA_CSS}</style>
+      <a
+        className="v2done-cta"
+        href={`/${conversation_id}/visualization`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 7,
+          marginTop: 14,
+          padding: '13px 16px',
+          borderRadius: 14,
+          background: '#1f7a4d',
+          color: '#fff',
+          fontSize: 15,
+          fontWeight: 700,
+          boxShadow: '0 1px 2px 0 rgba(0,0,0,.04)'
+        }}
+      >
+        {s.v2ViewEveryonesOpinions}
+        <ArrowRightIcon />
+      </a>
     </div>
   )
 }
 
-export default function VotingLayout({ s, topic, description, vm }: VotingLayoutProps) {
+export default function VotingLayout({
+  s,
+  conversation_id,
+  topic,
+  description,
+  vm
+}: VotingLayoutProps) {
   return (
     <div
       style={{
@@ -299,7 +351,11 @@ export default function VotingLayout({ s, topic, description, vm }: VotingLayout
             />
           </div>
 
-          {vm.notDone ? <VoteBlock s={s} vm={vm} /> : vm.allDone ? <DoneBlock s={s} /> : null}
+          {vm.notDone ? (
+            <VoteBlock s={s} vm={vm} />
+          ) : vm.allDone ? (
+            <DoneBlock s={s} conversation_id={conversation_id} />
+          ) : null}
         </div>
 
         {/* Opinion groups map + group data cards (shared with /:id/visualization) */}

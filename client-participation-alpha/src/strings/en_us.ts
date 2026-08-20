@@ -181,7 +181,8 @@ const s: Translations = {
   v2GroupAgreedSubtitle:
     "Statements with a clear majority (agree or disagree) within Group {{name}}.",
   v2VisualizationBack: "Back to conversation",
-  v2VisualizationTitle: "Everyone’s Opinions"
+  v2VisualizationTitle: "Everyone’s Opinions",
+  v2ViewEveryonesOpinions: "See everyone’s opinions"
 }
 
 export default s

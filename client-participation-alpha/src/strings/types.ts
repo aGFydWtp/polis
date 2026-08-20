@@ -135,4 +135,6 @@ export interface Translations {
   v2VisualizationBack: string
   /** Header label on the /:id/visualization page */
   v2VisualizationTitle: string
+  /** Link button in the all-answered card, leading to /:id/visualization */
+  v2ViewEveryonesOpinions: string
 }

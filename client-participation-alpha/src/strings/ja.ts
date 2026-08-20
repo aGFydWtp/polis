@@ -126,5 +126,6 @@ s.v2GroupAgreedTitle = "グループ{{name}}で同意されている意見"
 s.v2GroupAgreedSubtitle = "グループ{{name}}内で「はい」または「いいえ」が多数だった意見です。"
 s.v2VisualizationBack = "会話に戻る"
 s.v2VisualizationTitle = "みんなの意見"
+s.v2ViewEveryonesOpinions = "みんなの意見を見る"
 
 export default s
