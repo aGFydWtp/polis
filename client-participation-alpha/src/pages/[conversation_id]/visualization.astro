@@ -1,0 +1,89 @@
+---
+import { fetchParticipationInit } from '../../api/participation'
+import type { ParticipationInitData } from '../../api/types'
+import VisualizationScreen from '../../components/votingV2/VisualizationScreen'
+import Layout from '../layouts/Layout.astro'
+import { getTranslations } from '../../strings/strings'
+import { uiLanguageSSR } from '../../lib/lang'
+
+const { conversation_id } = Astro.params;
+
+// Validate conversation_id - reject common invalid requests (mirrors [conversation_id].astro)
+if (!conversation_id ||
+    conversation_id.includes('.') || // Reject any ID with file extensions
+    conversation_id.length < 3) { // Reject very short IDs
+  return Astro.redirect('/404');
+}
+
+const s = await getTranslations(
+  Astro.url.searchParams.get('ui_lang'),
+  Astro.request.headers.get('accept-language')
+);
+
+const pageLang = uiLanguageSSR(
+  Astro.url.searchParams.get('ui_lang'),
+  Astro.request.headers.get('accept-language')
+);
+
+let initialData: ParticipationInitData | undefined;
+let fetchError = null;
+
+try {
+  initialData = await fetchParticipationInit(conversation_id, {
+    includePCA: false,
+    lang: pageLang || undefined
+  });
+} catch (error: unknown) {
+  console.error("Failed to fetch conversation data:", error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  fetchError = s.couldNotLoadConversation.replace('{{error}}', errorMessage)
+}
+
+const topic = initialData?.conversation.topic ?? '';
+---
+<Layout
+  title={topic || 'Loading Conversation...'}
+  lang={pageLang || 'en'}
+  dir={s.direction}
+>
+  {/* Store the participant JWT so the map can show the viewer's own position
+      (same synchronous handling as [conversation_id].astro) */}
+  <script define:vars={{ initialData }} is:inline>
+    if (initialData && initialData.auth && initialData.auth.token) {
+      const token = initialData.auth.token;
+      try {
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const conversationId = payload.conversation_id;
+          if (conversationId && window.localStorage) {
+            const tokenKey = "participant_token_" + conversationId;
+            window.localStorage.setItem(tokenKey, token);
+            window.dispatchEvent(new CustomEvent('polis-token-update', {
+              detail: { conversation_id: conversationId }
+            }));
+          }
+        }
+      } catch (e) {
+        console.error('[Token] Error storing JWT:', e);
+      }
+    }
+  </script>
+
+  {fetchError || !initialData ? (
+    <div class="container">
+      <div class="error-message">
+        <h2>{s.oops}</h2>
+        <p>{fetchError ?? s.loading}</p>
+      </div>
+    </div>
+  ) : (
+    <VisualizationScreen
+      client:load
+      conversation_id={initialData.conversation.conversation_id}
+      s={s}
+      topic={topic}
+      visType={initialData.conversation.vis_type}
+    />
+  )}
+</Layout>

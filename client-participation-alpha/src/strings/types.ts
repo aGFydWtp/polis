@@ -131,4 +131,8 @@ export interface Translations {
   v2GroupAgreedTitle: string
   /** Per-group agreed-opinions section: explanatory subtitle under the heading. */
   v2GroupAgreedSubtitle: string
+  /** Aria-label for the back button on the /:id/visualization page */
+  v2VisualizationBack: string
+  /** Header label on the /:id/visualization page */
+  v2VisualizationTitle: string
 }

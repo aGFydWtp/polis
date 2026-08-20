@@ -179,7 +179,9 @@ const s: Translations = {
   v2YouBubble: "You",
   v2GroupAgreedTitle: "Opinions Group {{name}} agrees on",
   v2GroupAgreedSubtitle:
-    "Statements with a clear majority (agree or disagree) within Group {{name}}."
+    "Statements with a clear majority (agree or disagree) within Group {{name}}.",
+  v2VisualizationBack: "Back to conversation",
+  v2VisualizationTitle: "Everyone’s Opinions"
 }
 
 export default s

@@ -94,6 +94,11 @@ interface UseVotingScreenArgs {
   visType?: number
   /** Translations, used to resolve vote-failure messages. */
   s: Translations
+  /**
+   * When false, skips fetching the personalized next statement — used by the
+   * view-only /:id/visualization page, which never votes.
+   */
+  votingEnabled?: boolean
 }
 
 /** Maps a vote-submission error to a user-facing message (mirrors Survey.tsx). */
@@ -133,7 +138,8 @@ export function useVotingScreen({
   conversation_id,
   initialStatement,
   visType,
-  s
+  s,
+  votingEnabled = true
 }: UseVotingScreenArgs) {
   // ── Voting state ──────────────────────────────────────────────
   const [statement, setStatement] = useState<StatementData | undefined>(initialStatement)
@@ -157,6 +163,7 @@ export function useVotingScreen({
 
   // ── Personalized first comment (mirrors Survey.tsx) ───────────
   useEffect(() => {
+    if (!votingEnabled) return
     let cancelled = false
     const loadFirst = async () => {
       try {
@@ -187,7 +194,7 @@ export function useVotingScreen({
     return () => {
       cancelled = true
     }
-  }, [conversation_id])
+  }, [conversation_id, votingEnabled])
 
   // ── User pid for the map indicator ────────────────────────────
   useEffect(() => {

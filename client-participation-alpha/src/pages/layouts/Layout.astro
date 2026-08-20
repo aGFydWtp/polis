@@ -8,6 +8,14 @@ interface Props {
 }
 
 const { title = 'Polis Conversation', lang = 'en', dir = 'ltr' } = Astro.props;
+
+// Relative favicon path that climbs back to the app root from nested routes
+// (e.g. /:id/visualization) so it still works when the app is mounted at
+// /alpha/ behind nginx, where the mount prefix is invisible to the server.
+const pathname = Astro.url.pathname;
+const segmentCount = pathname.split('/').filter(Boolean).length;
+const upLevels = pathname.endsWith('/') ? segmentCount : Math.max(0, segmentCount - 1);
+const faviconHref = '../'.repeat(upLevels) + 'favicon.ico';
 ---
 <!DOCTYPE html>
 <html lang={lang} dir={dir}>
@@ -17,7 +25,7 @@ const { title = 'Polis Conversation', lang = 'en', dir = 'ltr' } = Astro.props;
     <!-- Tints the mobile browser chrome (iOS status bar / Android address bar) to match the hero -->
     <meta name="theme-color" content="#1f2a44" />
     <!-- Relative URL so it works when app is mounted at /alpha/ behind nginx -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="icon" type="image/x-icon" href={faviconHref} />
     <!-- Noto Sans JP for a consistent typeface across platforms -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
