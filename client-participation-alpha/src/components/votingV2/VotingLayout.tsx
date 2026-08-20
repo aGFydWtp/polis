@@ -184,6 +184,27 @@ const DONE_CTA_CSS =
   '.v2done-cta{text-decoration:none;transition:background .15s ease}' +
   '.v2done-cta:hover,.v2done-cta:focus-visible{background:#1a6741}'
 
+/** Underlined text link under the vote card; darkens on hover like the CTA. */
+const VIZ_LINK_CSS =
+  '.v2viz-link{text-decoration:underline;transition:color .15s ease}' +
+  '.v2viz-link:hover,.v2viz-link:focus-visible{color:#000}'
+
+function VisualizationLink({ s, conversation_id }: { s: Translations; conversation_id: string }) {
+  return (
+    <div style={{ maxWidth: 600, margin: '10px auto 0', textAlign: 'right' }}>
+      <style>{VIZ_LINK_CSS}</style>
+      <a
+        className="v2viz-link"
+        href={`/${conversation_id}/visualization`}
+        style={{ fontSize: 16, color: INK }}
+      >
+        {s.v2ViewEveryonesOpinions}
+        {' \u2192'}
+      </a>
+    </div>
+  )
+}
+
 function ArrowRightIcon() {
   return (
     <svg
@@ -375,6 +396,12 @@ export default function VotingLayout({
             />
           ) : null}
         </div>
+
+        {/* Offered alongside voting; once everything is answered the done card's
+            button takes over. */}
+        {visualizationEnabled && vm.notDone && (
+          <VisualizationLink s={s} conversation_id={conversation_id} />
+        )}
       </div>
     </div>
   )
