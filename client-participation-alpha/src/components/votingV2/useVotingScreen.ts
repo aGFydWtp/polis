@@ -167,12 +167,12 @@ export function useVotingScreen({
   // "all answered" card from flashing while the browser navigates away.
   const [isRedirectingToVisualization, setIsRedirectingToVisualization] = useState(false)
 
-  // Flipped the moment a vote is *submitted*, not when it resolves: the point
-  // is to stop a late first-fetch response from redirecting out from under a
-  // vote that is already in flight. Waiting for completion would leave the
-  // whole request window unguarded — exactly when the two races overlap. A ref
-  // (not state) because only the async callbacks below read it: no re-render
-  // is needed and the load effect's deps stay clean.
+  // Flipped the moment a vote is *submitted*, not when it resolves: it marks
+  // the point after which the in-flight first fetch below is stale. Waiting
+  // for completion would leave the whole request window unguarded — exactly
+  // when the two races overlap. A ref (not state) because only the async
+  // callbacks below read it: no re-render is needed and the load effect's deps
+  // stay clean.
   const hasVotedRef = useRef(false)
 
   // ── PCA / map state ───────────────────────────────────────────
@@ -195,18 +195,21 @@ export function useVotingScreen({
       try {
         const resp = await fetchNextComment(conversation_id)
         if (cancelled) return
+        // This request was issued before any vote, so the vote's own response
+        // is by definition newer: once one has been submitted, everything
+        // below is stale. Applying it anyway would put the just-answered
+        // statement back on screen (and roll `total` back), or redirect a
+        // participant who has earned the done card. `cancelled` can't express
+        // this — it only fires on unmount and dependency changes.
+        if (hasVotedRef.current) return
         const hasNextStatement = !!resp && typeof resp.tid !== 'undefined'
         // Everything was already answered before this page was opened (SSR
         // can't tell: its participationInit is anonymous, so it always hands
         // down a statement). Send the participant on to the visualization
         // rather than showing them the "all answered" card they'd have to
-        // click through. Voting the last statement away is a different path
-        // and keeps the card — including when the participant votes on the
-        // SSR-provided statement before this fetch resolves, which is why the
-        // vote flag is checked here and not only via `cancelled`.
+        // click through.
         if (
           visualizationHref &&
-          !hasVotedRef.current &&
           shouldRedirectToVisualization({
             votingEnabled,
             visualizationEnabled,
