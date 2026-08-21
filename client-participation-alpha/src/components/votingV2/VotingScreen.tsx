@@ -1,6 +1,7 @@
 import type { Translations } from '../../strings/types'
 import type { StatementData } from '../types'
 import VotingLayout from './VotingLayout'
+import { visualizationPath } from './paths'
 import { useVotingScreen } from './useVotingScreen'
 
 interface VotingScreenProps {
@@ -29,7 +30,14 @@ export default function VotingScreen({
   visType,
   basePath = ''
 }: VotingScreenProps) {
-  const vm = useVotingScreen({ conversation_id, initialStatement, s })
+  const visualizationEnabled = visType === 1
+  const vm = useVotingScreen({
+    conversation_id,
+    initialStatement,
+    s,
+    visualizationEnabled,
+    visualizationHref: visualizationPath(basePath, conversation_id)
+  })
 
   return (
     <VotingLayout
@@ -38,7 +46,7 @@ export default function VotingScreen({
       basePath={basePath}
       topic={topic}
       description={description}
-      visualizationEnabled={visType === 1}
+      visualizationEnabled={visualizationEnabled}
       vm={vm}
     />
   )

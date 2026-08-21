@@ -1,6 +1,8 @@
+import { markReturnedFromVisualization } from '../../lib/visualizationRedirect'
 import type { Translations } from '../../strings/types'
 import { BasePathContext } from '../BasePathContext'
 import OpinionGroupsSection from './OpinionGroupsSection'
+import { conversationPath } from './paths'
 import { useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -47,7 +49,7 @@ export default function VisualizationScreen({
   basePath = ''
 }: VisualizationScreenProps) {
   const vm = useVotingScreen({ conversation_id, visType, s, votingEnabled: false })
-  const backHref = `${basePath}/${conversation_id}`
+  const backHref = conversationPath(basePath, conversation_id)
 
   return (
     <BasePathContext.Provider value={basePath}>
@@ -87,6 +89,10 @@ export default function VisualizationScreen({
           >
             <a
               href={backHref}
+              // Plain anchor navigation is kept (no preventDefault) — this only
+              // records that the participant chose to go back, so the voting
+              // page doesn't bounce them straight here again.
+              onClick={() => markReturnedFromVisualization(conversation_id)}
               aria-label={s.v2VisualizationBack}
               style={{
                 flex: 'none',

@@ -4,6 +4,11 @@ import { fetchPCAData } from '../../api/pca'
 import type { Comment, PCAData } from '../../api/types'
 import { submitVote } from '../../api/votes'
 import { getConversationToken } from '../../lib/auth'
+import {
+  hasReturnedFromVisualization,
+  redirectToVisualization,
+  shouldRedirectToVisualization
+} from '../../lib/visualizationRedirect'
 import type { Translations } from '../../strings/types'
 import type { StatementData, VoteData } from '../types'
 import { groupLetters, REFRESH_DELAY_MS } from '../visualization/constants'
@@ -99,6 +104,14 @@ interface UseVotingScreenArgs {
    * view-only /:id/visualization page, which never votes.
    */
   votingEnabled?: boolean
+  /**
+   * Whether /:id/visualization is reachable (vis_type === 1). Gates the
+   * "already answered everything" redirect only; the opinion-group map on this
+   * hook is gated by `visType` above.
+   */
+  visualizationEnabled?: boolean
+  /** Target of that redirect — see `paths.ts#visualizationPath`. */
+  visualizationHref?: string
 }
 
 /** Maps a vote-submission error to a user-facing message (mirrors Survey.tsx). */
@@ -139,7 +152,9 @@ export function useVotingScreen({
   initialStatement,
   visType,
   s,
-  votingEnabled = true
+  votingEnabled = true,
+  visualizationEnabled = false,
+  visualizationHref
 }: UseVotingScreenArgs) {
   // ── Voting state ──────────────────────────────────────────────
   const [statement, setStatement] = useState<StatementData | undefined>(initialStatement)
@@ -148,6 +163,17 @@ export function useVotingScreen({
   const [total, setTotal] = useState<number | undefined>(undefined)
   // Distinguish "still loading first comment" from "genuinely done".
   const [hasLoadedFirst, setHasLoadedFirst] = useState<boolean>(!!initialStatement)
+  // Set once a redirect to /:id/visualization has been started; keeps the
+  // "all answered" card from flashing while the browser navigates away.
+  const [isRedirectingToVisualization, setIsRedirectingToVisualization] = useState(false)
+
+  // Flipped the moment a vote is *submitted*, not when it resolves: the point
+  // is to stop a late first-fetch response from redirecting out from under a
+  // vote that is already in flight. Waiting for completion would leave the
+  // whole request window unguarded — exactly when the two races overlap. A ref
+  // (not state) because only the async callbacks below read it: no re-render
+  // is needed and the load effect's deps stay clean.
+  const hasVotedRef = useRef(false)
 
   // ── PCA / map state ───────────────────────────────────────────
   const [pcaData, setPcaData] = useState<PCAData | null>(null)
@@ -169,7 +195,30 @@ export function useVotingScreen({
       try {
         const resp = await fetchNextComment(conversation_id)
         if (cancelled) return
-        if (resp && typeof resp.tid !== 'undefined') {
+        const hasNextStatement = !!resp && typeof resp.tid !== 'undefined'
+        // Everything was already answered before this page was opened (SSR
+        // can't tell: its participationInit is anonymous, so it always hands
+        // down a statement). Send the participant on to the visualization
+        // rather than showing them the "all answered" card they'd have to
+        // click through. Voting the last statement away is a different path
+        // and keeps the card — including when the participant votes on the
+        // SSR-provided statement before this fetch resolves, which is why the
+        // vote flag is checked here and not only via `cancelled`.
+        if (
+          visualizationHref &&
+          !hasVotedRef.current &&
+          shouldRedirectToVisualization({
+            votingEnabled,
+            visualizationEnabled,
+            hasNextStatement,
+            returnedFromVisualization: hasReturnedFromVisualization(conversation_id)
+          })
+        ) {
+          setIsRedirectingToVisualization(true)
+          redirectToVisualization(visualizationHref)
+          return
+        }
+        if (resp && hasNextStatement) {
           setStatement((prev) => {
             const mapped: StatementData = {
               tid: resp.tid as number,
@@ -194,7 +243,7 @@ export function useVotingScreen({
     return () => {
       cancelled = true
     }
-  }, [conversation_id, votingEnabled])
+  }, [conversation_id, votingEnabled, visualizationEnabled, visualizationHref])
 
   // ── User pid for the map indicator ────────────────────────────
   useEffect(() => {
@@ -467,6 +516,7 @@ export function useVotingScreen({
   const vote = useCallback(
     async (voteType: number) => {
       if (!statement) return
+      hasVotedRef.current = true
       setIsFetchingNext(true)
       setVoteError(null)
       try {
@@ -514,6 +564,7 @@ export function useVotingScreen({
     progressPct,
     notDone,
     allDone,
+    isRedirectingToVisualization,
     isFetchingNext,
     voteError,
     vote,

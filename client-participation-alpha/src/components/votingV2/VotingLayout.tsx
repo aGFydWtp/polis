@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
+import { visualizationPath } from './paths'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
 
 const INK = '#1f2a44'
@@ -286,7 +287,7 @@ export default function VotingLayout({
   visualizationEnabled,
   vm
 }: VotingLayoutProps) {
-  const visualizationHref = `${basePath}/${conversation_id}/visualization`
+  const visualizationHref = visualizationPath(basePath, conversation_id)
   return (
     <div
       style={{
@@ -388,7 +389,9 @@ export default function VotingLayout({
 
           {vm.notDone ? (
             <VoteBlock s={s} vm={vm} />
-          ) : vm.allDone ? (
+          ) : vm.allDone && !vm.isRedirectingToVisualization ? (
+            // Suppressed while a redirect to the visualization is under way —
+            // the card would only flash for the length of the navigation.
             <DoneBlock s={s} href={visualizationHref} visualizationEnabled={visualizationEnabled} />
           ) : null}
         </div>
