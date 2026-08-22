@@ -14,13 +14,15 @@ const DISAGREE_COLOR = '#d9463b'
 const PASS_COLOR = '#c2c8d4'
 const TRACK_COLOR = '#eef1f6'
 
+/** Card grid spacing — the same value between columns and between rows. */
+const CARD_GAP = 20
+
 /** Donut ring radius in the 72×72 viewBox; circumference ≈ 163.4. */
 const RADIUS = 26
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 interface SizeSpec {
   cardPadding: number
-  cardMarginTop: number
   statementFontSize: number
   donutSize: number
   centerNumberSize: number
@@ -34,7 +36,6 @@ interface SizeSpec {
 const SIZES: Record<'desktop' | 'mobile', SizeSpec> = {
   desktop: {
     cardPadding: 20,
-    cardMarginTop: 30,
     statementFontSize: 20,
     donutSize: 128,
     centerNumberSize: 32,
@@ -46,7 +47,6 @@ const SIZES: Record<'desktop' | 'mobile', SizeSpec> = {
   },
   mobile: {
     cardPadding: 18,
-    cardMarginTop: 26,
     statementFontSize: 18,
     donutSize: 112,
     centerNumberSize: 28,
@@ -195,8 +195,7 @@ function ConsensusCard({
     borderRadius: 18,
     padding: size.cardPadding,
     boxShadow: '0 4px 16px rgba(31,42,68,.06)',
-    border: '1px solid #e7ebf2',
-    marginTop: size.cardMarginTop
+    border: '1px solid #e7ebf2'
   }
   return (
     <div style={cardStyle}>
@@ -286,7 +285,8 @@ export default function ConsensusSection({
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          columnGap: 20
+          gap: CARD_GAP,
+          marginTop: CARD_GAP
         }}
       >
         {items.map((item) => (
