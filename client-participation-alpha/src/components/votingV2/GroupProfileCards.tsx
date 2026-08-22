@@ -27,11 +27,11 @@ function GroupProfileCard({ s, profile }: { s: Translations; profile: GroupProfi
     >
       <div
         style={{
-          background: '#f1f3f8',
+          background: INK,
           padding: '14px 16px',
           fontSize: 16,
           fontWeight: 700,
-          color: INK
+          color: '#fff'
         }}
       >
         {tpl(s.v2GroupRepOpinionsTitle, { name: profile.name })}
