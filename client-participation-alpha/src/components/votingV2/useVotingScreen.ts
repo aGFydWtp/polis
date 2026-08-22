@@ -16,6 +16,7 @@ import type { SelectedStatement, StatementContext, StatementWithType } from '../
 import { useOwnVotes } from '../visualization/useOwnVotes'
 import { useVisualizationData } from '../visualization/useVisualizationData'
 import { aggregateGroupVotesForTid, selectTopConsensusItems } from '../visualization/utils'
+import { VOTE_ENTER_MS, VOTE_GUARD_MS, VOTE_LEAVE_MS } from './voteTransition'
 
 /**
  * Vote values (raw sign, matching the server / Survey.tsx convention):
@@ -24,6 +25,13 @@ import { aggregateGroupVotesForTid, selectTopConsensusItems } from '../visualiza
 export const VOTE_AGREE = -1
 export const VOTE_DISAGREE = 1
 export const VOTE_HOLD = 0
+
+/**
+ * Where a vote came from. Pointer taps are rate-limited across cards (they are
+ * the ones that repeat by reflex at a fixed coordinate); keyboard activation is
+ * deliberate, so it is only held back while a vote is actually in flight.
+ */
+export type VoteSource = 'pointer' | 'keyboard'
 
 export interface GroupInfo {
   groupId: number
@@ -162,6 +170,22 @@ export function useVotingScreen({
   // Set once a redirect to /:id/visualization has been started; keeps the
   // "all answered" card from flashing while the browser navigates away.
   const [isRedirectingToVisualization, setIsRedirectingToVisualization] = useState(false)
+
+  // ── Card swap / cross-card input guard ────────────────────────
+  // The vote just pressed, kept on screen as the answer's confirmation until
+  // the card leaves. Null whenever no vote is resolving.
+  const [pendingVote, setPendingVote] = useState<number | null>(null)
+  // True while the answered card is animating away, before the next is mounted.
+  const [isLeaving, setIsLeaving] = useState(false)
+  // Drives the button styling: input is inert from the tap until the next card
+  // has come to rest. Mirrored by `guardedRef` for the callbacks, which must
+  // read it without waiting for a re-render.
+  const [inputLocked, setInputLocked] = useState(false)
+  // Bumped per swap so the new card remounts and replays its enter animation.
+  const [cardKey, setCardKey] = useState(0)
+  const submittingRef = useRef(false)
+  const guardedRef = useRef(false)
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Flipped the moment a vote is *submitted*, not when it resolves: it marks
   // the point after which the in-flight first fetch below is stale. Waiting
@@ -511,17 +535,51 @@ export function useVotingScreen({
   )
 
   // ── Voting ────────────────────────────────────────────────────
+  useEffect(
+    () => () => {
+      if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+    },
+    []
+  )
+
+  const releaseInput = useCallback(() => {
+    guardedRef.current = false
+    setInputLocked(false)
+  }, [])
+
   const vote = useCallback(
-    async (voteType: number) => {
+    async (voteType: number, source: VoteSource = 'pointer') => {
       if (!statement) return
+      // One vote per card, whatever the input: the answer is already on its way.
+      if (submittingRef.current) return
+      // Cross-card guard: a tap this soon after the last one was aimed at the
+      // card that has just left, so it says nothing about the statement now
+      // under the finger. Keyboard activation is let through — it can't be
+      // triggered by tapping the same coordinate twice.
+      if (source === 'pointer' && guardedRef.current) return
+
+      const tappedAt = Date.now()
+      submittingRef.current = true
+      guardedRef.current = true
+      setInputLocked(true)
+      setPendingVote(voteType)
       hasVotedRef.current = true
       setIsFetchingNext(true)
       setVoteError(null)
+
+      // Only a swap earns the full guard; a failed vote leaves the same card up
+      // and has to stay answerable.
+      let swapped = false
       try {
         const result = await submitVoteAndGetNext(
           { vote: voteType, tid: statement.tid },
           conversation_id
         )
+        // Lift the answered card away first, so the next statement is seen to
+        // arrive rather than to have silently replaced its predecessor.
+        setIsLeaving(true)
+        await new Promise((resolve) => setTimeout(resolve, VOTE_LEAVE_MS))
+        swapped = true
         if (result?.nextComment) {
           setStatement(result.nextComment)
           const next = result.nextComment as StatementData & { total?: number }
@@ -534,9 +592,25 @@ export function useVotingScreen({
         setVoteError(resolveVoteError(err, s))
       } finally {
         setIsFetchingNext(false)
+        setIsLeaving(false)
+        setPendingVote(null)
+        submittingRef.current = false
+        if (lockTimerRef.current) clearTimeout(lockTimerRef.current)
+        if (swapped) {
+          setCardKey((k) => k + 1)
+          // Live again once the new card has come to rest, and never less than
+          // VOTE_GUARD_MS after the tap — a fast round trip must not shorten
+          // the window the guard exists for.
+          lockTimerRef.current = setTimeout(
+            releaseInput,
+            Math.max(VOTE_ENTER_MS, VOTE_GUARD_MS - (Date.now() - tappedAt))
+          )
+        } else {
+          releaseInput()
+        }
       }
     },
-    [statement, conversation_id, s]
+    [statement, conversation_id, s, releaseInput]
   )
 
   const notDone = !!statement
@@ -566,6 +640,11 @@ export function useVotingScreen({
     isFetchingNext,
     voteError,
     vote,
+    // card swap / input guard
+    pendingVote,
+    isLeaving,
+    inputLocked,
+    cardKey,
     // groups / map
     groupsEnabled,
     hasPca,

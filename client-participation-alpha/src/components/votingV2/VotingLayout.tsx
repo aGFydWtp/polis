@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { Translations } from '../../strings/types'
 import { visualizationPath } from './paths'
 import { VOTE_AGREE, VOTE_DISAGREE, VOTE_HOLD, type useVotingScreen } from './useVotingScreen'
+import { VOTE_SWAP_CSS } from './voteTransition'
 
 const INK = '#1f2a44'
 const INDIGO = '#3b5bdb'
@@ -46,7 +47,8 @@ const voteBtnBase: CSSProperties = {
   fontSize: 15.5,
   fontWeight: 700,
   boxShadow: '0 1px 2px 0 rgba(0,0,0,.04)',
-  cursor: 'pointer'
+  cursor: 'pointer',
+  transition: 'opacity .15s ease, background .15s ease, box-shadow .15s ease'
 }
 
 /** Soft tinted vote-button style: 10% fill, full-strength label, 55% border. */
@@ -110,8 +112,49 @@ function HoldIcon() {
   )
 }
 
+/**
+ * One answer button. It is never `disabled` while the input guard holds:
+ * disabling would drop keyboard focus mid-swap, and the guard only means to
+ * stop repeat *taps*. Pointer events are switched off instead, and the hook
+ * re-checks the guard anyway — the styling is a hint, not the enforcement.
+ */
+function VoteButton({
+  vm,
+  value,
+  rgb,
+  label,
+  icon
+}: {
+  vm: VM
+  value: number
+  rgb: string
+  label: string
+  icon: ReactNode
+}) {
+  const pending = vm.pendingVote === value
+  return (
+    <button
+      style={{
+        ...voteBtnBase,
+        ...voteBtnTint(rgb),
+        // The pressed answer stays lit as the card's confirmation; the others
+        // recede so it reads as a choice made, not as three buttons greyed out.
+        ...(pending
+          ? { background: `rgba(${rgb}, .22)`, boxShadow: `0 0 0 2px rgba(${rgb}, .3)` }
+          : null),
+        opacity: vm.inputLocked && !pending ? 0.45 : 1,
+        pointerEvents: vm.inputLocked ? 'none' : undefined
+      }}
+      // A click with detail 0 came from Enter/Space, not from a tap.
+      onClick={(e) => vm.vote(value, e.detail === 0 ? 'keyboard' : 'pointer')}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+}
+
 function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
-  const disabled = vm.isFetchingNext
   return (
     <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 9, marginTop: 14 }}>
       {vm.voteError && (
@@ -130,30 +173,27 @@ function VoteButtons({ s, vm }: { s: Translations; vm: VM }) {
           {vm.voteError}
         </div>
       )}
-      <button
-        style={{ ...voteBtnBase, ...voteBtnTint('47, 158, 111'), opacity: disabled ? 0.6 : 1 }}
-        disabled={disabled}
-        onClick={() => vm.vote(VOTE_AGREE)}
-      >
-        <AgreeIcon />
-        {s.agree}
-      </button>
-      <button
-        style={{ ...voteBtnBase, ...voteBtnTint('217, 70, 59'), opacity: disabled ? 0.6 : 1 }}
-        disabled={disabled}
-        onClick={() => vm.vote(VOTE_DISAGREE)}
-      >
-        <DisagreeIcon />
-        {s.disagree}
-      </button>
-      <button
-        style={{ ...voteBtnBase, ...voteBtnTint('136, 146, 166'), opacity: disabled ? 0.6 : 1 }}
-        disabled={disabled}
-        onClick={() => vm.vote(VOTE_HOLD)}
-      >
-        <HoldIcon />
-        {s.pass}
-      </button>
+      <VoteButton
+        vm={vm}
+        value={VOTE_AGREE}
+        rgb="47, 158, 111"
+        label={s.agree}
+        icon={<AgreeIcon />}
+      />
+      <VoteButton
+        vm={vm}
+        value={VOTE_DISAGREE}
+        rgb="217, 70, 59"
+        label={s.disagree}
+        icon={<DisagreeIcon />}
+      />
+      <VoteButton
+        vm={vm}
+        value={VOTE_HOLD}
+        rgb="136, 146, 166"
+        label={s.pass}
+        icon={<HoldIcon />}
+      />
     </div>
   )
 }
@@ -387,13 +427,23 @@ export default function VotingLayout({
             />
           </div>
 
-          {vm.notDone ? (
-            <VoteBlock s={s} vm={vm} />
-          ) : vm.allDone && !vm.isRedirectingToVisualization ? (
-            // Suppressed while a redirect to the visualization is under way —
-            // the card would only flash for the length of the navigation.
-            <DoneBlock s={s} href={visualizationHref} visualizationEnabled={visualizationEnabled} />
-          ) : null}
+          {/* Keyed by the swap counter so each answered statement is replaced by
+              a card that visibly arrives, rather than in place under the finger
+              that has just voted. See voteTransition.ts. */}
+          <style>{VOTE_SWAP_CSS}</style>
+          <div key={vm.cardKey} className={vm.isLeaving ? 'v2card-leave' : 'v2card-enter'}>
+            {vm.notDone ? (
+              <VoteBlock s={s} vm={vm} />
+            ) : vm.allDone && !vm.isRedirectingToVisualization ? (
+              // Suppressed while a redirect to the visualization is under way —
+              // the card would only flash for the length of the navigation.
+              <DoneBlock
+                s={s}
+                href={visualizationHref}
+                visualizationEnabled={visualizationEnabled}
+              />
+            ) : null}
+          </div>
         </div>
 
         {/* Offered alongside voting; once everything is answered the done card's
