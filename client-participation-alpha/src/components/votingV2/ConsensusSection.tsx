@@ -1,12 +1,11 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import type { ConsensusStatement } from './useVotingScreen'
-import { statementNumber } from './statementNumber'
 
 /**
  * みんなの共通意見 (cross-group consensus) section — design pattern 6d
- * (ドーナツ強調型・改): one card per consensus statement, with an overlapping
- * #N badge, the statement text, a stacked-arc donut and a stance legend.
+ * (ドーナツ強調型・改): one card per consensus statement, with the statement
+ * text, a stacked-arc donut and a stance legend.
  */
 
 const INK = '#1f2a44'
@@ -22,10 +21,6 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 interface SizeSpec {
   cardPadding: number
   cardMarginTop: number
-  badgeFontSize: number
-  badgePadding: string
-  badgeTop: number
-  badgeLeft: number
   statementFontSize: number
   donutSize: number
   centerNumberSize: number
@@ -40,10 +35,6 @@ const SIZES: Record<'desktop' | 'mobile', SizeSpec> = {
   desktop: {
     cardPadding: 20,
     cardMarginTop: 30,
-    badgeFontSize: 20,
-    badgePadding: '6px 16px',
-    badgeTop: -18,
-    badgeLeft: 20,
     statementFontSize: 20,
     donutSize: 128,
     centerNumberSize: 32,
@@ -56,10 +47,6 @@ const SIZES: Record<'desktop' | 'mobile', SizeSpec> = {
   mobile: {
     cardPadding: 18,
     cardMarginTop: 26,
-    badgeFontSize: 19,
-    badgePadding: '6px 15px',
-    badgeTop: -16,
-    badgeLeft: 18,
     statementFontSize: 18,
     donutSize: 112,
     centerNumberSize: 28,
@@ -209,28 +196,10 @@ function ConsensusCard({
     padding: size.cardPadding,
     boxShadow: '0 4px 16px rgba(31,42,68,.06)',
     border: '1px solid #e7ebf2',
-    marginTop: size.cardMarginTop,
-    position: 'relative'
+    marginTop: size.cardMarginTop
   }
   return (
     <div style={cardStyle}>
-      <div
-        style={{
-          position: 'absolute',
-          top: size.badgeTop,
-          left: size.badgeLeft,
-          background: '#38415a',
-          color: '#fff',
-          fontSize: size.badgeFontSize,
-          fontStyle: 'italic',
-          fontWeight: 700,
-          lineHeight: 1,
-          padding: size.badgePadding,
-          boxShadow: '0 8px 18px -6px rgba(31,42,68,.4)'
-        }}
-      >
-        #{statementNumber(item.tid)}
-      </div>
       <div
         style={{
           fontSize: size.statementFontSize,
