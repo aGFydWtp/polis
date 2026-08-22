@@ -82,7 +82,7 @@ export default function GroupProfileCards({ s, profiles, columns = 1 }: GroupPro
   return (
     <div
       style={{
-        marginTop: 48,
+        marginTop: 24,
         display: 'grid',
         gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
         gap: 20
