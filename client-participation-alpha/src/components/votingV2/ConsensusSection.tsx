@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import type { ConsensusStatement } from './useVotingScreen'
+import { statementNumber } from './statementNumber'
 
 /**
  * みんなの共通意見 (cross-group consensus) section — design pattern 6d
  * (ドーナツ強調型・改): one card per consensus statement, with an overlapping
- * #tid badge, the statement text, a stacked-arc donut and a stance legend.
+ * #N badge, the statement text, a stacked-arc donut and a stance legend.
  */
 
 const INK = '#1f2a44'
@@ -228,7 +229,7 @@ function ConsensusCard({
           boxShadow: '0 8px 18px -6px rgba(31,42,68,.4)'
         }}
       >
-        #{item.tid}
+        #{statementNumber(item.tid)}
       </div>
       <div
         style={{

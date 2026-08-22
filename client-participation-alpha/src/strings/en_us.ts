@@ -154,7 +154,7 @@ const s: Translations = {
   v2VoteInDockHint: "Answer one at a time in the voting dock on the right.",
   v2GroupLabel: "Group",
   v2MajorOpinion: "Major opinions (overall)",
-  v2SelectToReact: "Select a statement to see reactions",
+  v2SelectToReact: "Statements",
   v2GroupsNotFormed: "Groups haven’t formed yet",
   v2PeopleCount: "{{n}}",
   v2StatReaction:

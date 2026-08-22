@@ -54,8 +54,6 @@ export interface GroupProfile {
 export interface StatChip {
   tid: number
   type: 'agree' | 'disagree'
-  /** 1-based index used purely for the chip label */
-  label: number
 }
 
 /** One cross-group consensus statement for the みんなの共通意見 (6d) donut cards. */
@@ -82,8 +80,6 @@ export interface GroupConsensus {
 }
 
 export interface StatSummary {
-  /** Statement id (tid) */
-  num: number
   /** Statement text */
   text: string
   /** Percentage agreeing/disagreeing (0-100, rounded) */
@@ -368,10 +364,9 @@ export function useVotingScreen({
 
   const chips: StatChip[] = useMemo(
     () =>
-      viz.statements.map((st: StatementWithType, i) => ({
+      viz.statements.map((st: StatementWithType) => ({
         tid: st.tid,
-        type: st.type,
-        label: i + 1
+        type: st.type
       })),
     [viz.statements]
   )
@@ -398,7 +393,7 @@ export function useVotingScreen({
     }
     const denom = agree + disagree
     const pct = denom > 0 ? Math.round(((stance === 'agree' ? agree : disagree) / denom) * 100) : 0
-    return { num: selectedStatement.tid, text: commentText(selectedStatement.tid), pct, stance }
+    return { text: commentText(selectedStatement.tid), pct, stance }
   }, [selectedStatement, viz.groupVoteData, commentText])
 
   // ── Cross-group consensus statements (みんなの共通意見, 6d) ──────

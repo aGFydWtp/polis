@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { Translations } from '../../strings/types'
 import type { SelectedStatement } from '../visualization/types'
 import type { GroupInfo, StatChip, StatSummary } from './useVotingScreen'
+import { statementNumber } from './statementNumber'
 
 const INDIGO = '#3b5bdb'
 
@@ -144,7 +145,7 @@ export default function GroupControls({
               style={chipStyle(selectedStatement?.tid === chip.tid)}
               onClick={() => onSelectChip(chip)}
             >
-              {chip.label}
+              #{statementNumber(chip.tid)}
             </button>
           ))
         )}
@@ -185,20 +186,15 @@ export function StatCard({ s, stat, variant }: StatCardProps) {
 
   return (
     <div style={wrapperStyle}>
-      <div style={{ display: 'flex', gap: 9 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: INDIGO, flex: 'none' }}>
-          #{stat.num}
-        </div>
-        <div
-          style={{
-            fontSize: 14,
-            lineHeight: 1.7,
-            color: '#25304a',
-            fontWeight: 500
-          }}
-        >
-          {stat.text}
-        </div>
+      <div
+        style={{
+          fontSize: 14,
+          lineHeight: 1.7,
+          color: '#25304a',
+          fontWeight: 500
+        }}
+      >
+        {stat.text}
       </div>
       <div
         style={{
